@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  ph_shoes_backend:
+    build:
+      context: ./ph-shoes-backend
+      dockerfile: DockerfileDev
+    env_file:
+      - ./ph-shoes-backend/.env
+    image: ph-shoes-backend:dev
+    container_name: ph-shoes-backend
+    volumes:
+      - ./ph-shoes-backend:/app
+    ports:
+      - '8080:8080'
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dsnowflake.jdbc.enableArrow=false"
+
+  ph_shoes_frontend:
+    build:
+      context: ./ph-shoes-frontend
+      dockerfile: Dockerfile.dev
+    image: ph-shoes-frontend:dev
+    container_name: ph-shoes-frontend
+    volumes:
+      - ./ph-shoes-frontend:/app:cached
+      - phshoes_frontend_node_modules:/app/node_modules
+    ports:
+      - '5173:5173'
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    depends_on:
+      - ph_shoes_backend
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+volumes:
+  phshoes_frontend_node_modules:

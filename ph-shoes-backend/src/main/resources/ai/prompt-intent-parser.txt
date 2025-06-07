@@ -1,0 +1,26 @@
+Convert "{QUERY}" into exactly one JSON object with keys:
+  brand, model, priceSaleMin, priceSaleMax, priceOriginalMin, priceOriginalMax, onSale, titleKeywords, subtitleKeywords, sortBy.
+
+Rules:
+1. Unspecified fields → null (onSale=false, sortBy=null).
+2. “under X” or “below X” → priceSaleMax=X; “over Y” or “above Y” → priceSaleMin=Y. Only set priceOriginal* if user says “original price…”.
+3. “on sale” → onSale=true.
+4. “most expensive” or “highest price” → sortBy="price_desc".
+5. Exact model names (e.g. “9060”, “Ultraboost 22”) → titleKeywords.
+6. Category words (“kids”, “running”, “trail”, “sneakers”, “boots”, “lifestyle”, etc.) → subtitleKeywords.
+7. Output only the JSON object—no extra text.
+
+Example:
+"Most expensive Nike Air Max 270 sneakers" →
+{
+  "brand":"nike",
+  "model":null,
+  "priceSaleMin":null,
+  "priceSaleMax":null,
+  "priceOriginalMin":null,
+  "priceOriginalMax":null,
+  "onSale":false,
+  "titleKeywords":["air max 270"],
+  "subtitleKeywords":["sneakers"],
+  "sortBy":"price_desc"
+}

@@ -1,0 +1,17 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# Bring in the rest of your source
+COPY . .
+
+# Expose Vite’s default dev port
+EXPOSE 3000
+
+# Use polling so file-watch inside Docker works reliably
+ENV CHOKIDAR_USEPOLLING=true
+
+CMD ["npm", "run", "dev"]

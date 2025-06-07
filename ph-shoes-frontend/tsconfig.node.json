@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["vite.config.ts"]
+}
