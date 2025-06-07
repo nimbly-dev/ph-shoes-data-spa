@@ -1,23 +1,27 @@
-
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copy Yarn files instead of npm lock
-COPY package.json yarn.lock ./
+# Copy only package.json (no lockfile)
+COPY package.json ./
 
-# Install deps with frozen lockfile
-RUN yarn install --frozen-lockfile
+# Install dependencies (no lockfile required)
+RUN npm install
 
-# Copy all source & bake in the API URL
+# Copy the rest of your source & bake in the API URL
 COPY . .
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Build your single‐file bundle
-RUN yarn build
+# Build the optimized single-file bundle
+RUN npm run build
 
 FROM nginx:stable-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /usr/share/nginx/html
+
+# Copy built assets
+COPY --from=builder /app/dist .
+
+# Use a custom Nginx config for SPA fallback
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
