@@ -3,6 +3,8 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+!libs
+!libs/snowflake-hibernate.jar
 
 ### STS ###
 .apt_generated

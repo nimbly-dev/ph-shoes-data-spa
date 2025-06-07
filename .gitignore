@@ -27,3 +27,6 @@ replay_pid*
 package-lock.json
 ./ph-shoes-backend/.env
 *.env
+
+!libs
+!libs/snowflake-hibernate.jar
