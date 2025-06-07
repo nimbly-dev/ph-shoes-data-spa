@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';
+import 'react-date-range/dist/theme/default.css';  
 import { formatISO } from 'date-fns';
 import { UIProductFilters } from '../../types/UIProductFilters';
 
@@ -136,23 +136,39 @@ export const FilterControls: React.FC<Props> = ({ filters, onChange }) => {
           InputProps={{ readOnly: true }}
           fullWidth
         />
-        <Popover
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handleClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        >
-          <DateRange
-            ranges={range}
-            onChange={ranges => setRange([ranges.selection])}
-            showSelectionPreview
-            moveRangeOnFirstSelection={false}
-            retainEndDateOnFirstSelection
-            months={1}
-            direction="horizontal"
-            className="muidate-range-popover"
-          />
-        </Popover>
+          <Popover
+            open={open}
+            anchorEl={anchorEl}
+            onClose={handleClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top',    horizontal: 'left' }}
+
+
+            PaperProps={{
+              sx: {
+                bgcolor:      'background.paper',
+                color:        'text.primary',
+                borderRadius: 1,
+                boxShadow:    3,
+                mt:           1,
+                maxHeight:   '80vh',
+                overflow:    'auto',
+              },
+            }}
+          >
+            <DateRange
+              ranges={range}
+              onChange={r => setRange([r.selection])}
+              showSelectionPreview
+              moveRangeOnFirstSelection={false}
+              retainEndDateOnFirstSelection
+              months={1}
+              direction="horizontal"
+            />
+          </Popover>
+
+
+
       </Box>
 
       {/* Keyword */}
