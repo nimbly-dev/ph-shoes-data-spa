@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: net.snowflake.hibernate.dialect.SnowflakeDialect
+
+ai:
+  openai:
+    chat-completion:
+      model: gpt-4.1-mini
+      temperature: 0
+      stop:
+        - "\n\n"

@@ -1,0 +1,38 @@
+########################################
+# 1) Build stage
+########################################
+FROM maven:3-amazoncorretto-21 AS builder
+WORKDIR /app
+
+# 1.1 Copy POM + install your snowflake-hibernate JAR
+COPY pom.xml .  
+COPY libs/snowflake-hibernate.jar libs/
+RUN mvn install:install-file \
+      -Dfile=libs/snowflake-hibernate.jar \
+      -DgroupId=net.snowflake \
+      -DartifactId=snowflake-hibernate \
+      -Dversion=0.0.2-SNAPSHOT \
+      -Dpackaging=jar -DgeneratePom=true \
+  && mvn dependency:go-offline -B
+
+# 1.2 Copy source & package
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+########################################
+# 2) Runtime stage
+########################################
+FROM amazoncorretto:21-alpine
+WORKDIR /app
+
+# Copy the fat JAR from the builder
+COPY --from=builder /app/target/*.jar app.jar
+
+# Prod JVM tweaks & Snowflake arrow‐disable flag
+ENV JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED -Dsnowflake.jdbc.enableArrow=false"
+
+# Expose the port your Spring Boot app listens on
+EXPOSE 8080
+
+# Run with the 'prod' profile
+ENTRYPOINT ["sh","-c","java $JAVA_TOOL_OPTIONS -jar app.jar --spring.profiles.active=prod"]

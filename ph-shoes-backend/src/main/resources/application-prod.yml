@@ -1,4 +1,4 @@
-# src/main/resources/application-dev.yml
+# src/main/resources/application-prod.yml
 spring:
   datasource:
     url: >-
@@ -9,16 +9,23 @@ spring:
       &JDBC_QUERY_RESULT_FORMAT=JSON
     username: ${SNOWFLAKE_USER}
     password: ${SNOWFLAKE_PWD}
-    driver-class-name: net.snowflake.client.jdbc.SnowflakeDriver
     hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
       data-source-properties:
         ENABLE_ARROW_RESULTSET: false
 
   jpa:
-    show-sql: true
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: INFO
 
 ai:
   openai:
-    speech:
-      enabled: false
     api-key: ${SPRING_AI_OPENAI_API_KEY}
