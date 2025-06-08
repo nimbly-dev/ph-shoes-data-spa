@@ -3,6 +3,8 @@ package com.nimbly.phshoesbackend.repository.specification;
 import com.nimbly.phshoesbackend.model.FactProductShoes;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -172,7 +174,22 @@ public class ProductShoesSpecifications {
                 predicates.add(subtitleCrossDisjunction);
             }
 
-            // NOTE: sortBy is accepted but not used here. Sorting by price_desc is applied in the service layer.
+            Subquery<String> maxDwid = query.subquery(String.class);
+            Root<FactProductShoes> sub = maxDwid.from(FactProductShoes.class);
+
+            Expression<String> subDwid = sub.get("key").get("dwid");
+            Expression<String> subId   = sub.get("key").get("id");
+
+            maxDwid.select(cb.greatest(subDwid))
+                    .where(cb.equal(subId, root.get("key").get("id")));
+
+            predicates.add(
+                    cb.equal(
+                            root.get("key").get("dwid"),
+                            maxDwid
+                    )
+            );
+
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
