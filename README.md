@@ -19,7 +19,7 @@
 <p align="center">
   <strong>You are viewing: <code>ph-shoes-data-spa</code> repository</strong><br />
   <a href="https://ph-shoes-frontend.onrender.com/">
-    <img src="https://img.shields.io/badge/Live_Render-✔️-brightgreen" alt="Live on Render" />
+    <img src="https://img.shields.io/badge/Live_Render-✔️-brightgreen" alt="Live on Render" style="margin-top: 8px;" />
   </a>
 </p>
 
