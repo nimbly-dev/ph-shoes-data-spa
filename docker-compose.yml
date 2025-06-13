@@ -15,6 +15,9 @@ services:
       - '8080:8080'
     environment:
       JAVA_TOOL_OPTIONS: "-Dsnowflake.jdbc.enableArrow=false"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   ph_shoes_frontend:
     build:
