@@ -17,20 +17,19 @@
 </p>
 
 <p align="center">
-  <strong>You are viewing: <code>ph-shoes-data-spa</code> repository</strong>
+  <strong>You are viewing: <code>ph-shoes-data-spa</code> repository</strong><br />
+  <a href="https://ph-shoes-frontend.onrender.com/">
+    <img src="https://img.shields.io/badge/Live_Render-✔️-brightgreen" alt="Live on Render" />
+  </a>
 </p>
-[![Live on Render](https://img.shields.io/badge/Live_Render-✔️-brightgreen)](https://ph-shoes-frontend.onrender.com/)
 
 ---
-
 
 # PH Shoes Data SPA Project Overview
 
 The **PH Shoes Data SPA Project** serves as the user-facing layer of the entire platform. It delivers a modern, responsive web experience built on top of a production-grade backend powered by Spring Boot and a rich frontend using React.
 
 This project is divided into two main components:
-
----
 
 ##  Backend — Java Spring Boot (v21)
 
@@ -46,8 +45,6 @@ The backend is responsible for exposing APIs that serve product data directly fr
   2. **Vector similarity lookup** against Ada-generated embeddings stored in Snowflake.
 
 This hybrid approach supports both structured filtering and semantic search in a unified API layer.
-
----
 
 ##  Frontend — React + MUI
 
@@ -90,8 +87,6 @@ This endpoint allows clients to filter product listings using structured query p
 GET /api/v1/fact-product-shoes?brand=nike&onSale=true&page=0&size=15
 ```
 
----
-
 ##  `GET /api/v1/fact-product-shoes/search?q=...`
 
 This endpoint performs a **semantic search** based on a natural language query. It combines prompt engineering and vector similarity against pre-generated OpenAI embeddings.
@@ -124,8 +119,6 @@ GET /api/v1/fact-product-shoes/search?q=affordable+trail+shoes+for+women
 
 The **frontend** is a Single Page Application (SPA) built using **React** and styled with **Material UI (MUI)**. It is optimized for both desktop and mobile, allowing users to browse, search, and filter shoe products with ease.
 
----
-
 ## Manual Filters
 
 Users can filter products by brand, gender, date range, keyword, and sale status. Filter state is fully reactive and synced to backend query parameters.
@@ -138,8 +131,6 @@ Users can filter products by brand, gender, date range, keyword, and sale status
   <img src="./images/manual_filters_darktheme.JPG" alt="Manual Filter UI - Dark Theme" width="85%" />
 </p>
 
----
-
 ## On-Sale Products
 
 Toggle the “On Sale Only” checkbox to show discounted products.
@@ -148,8 +139,6 @@ Toggle the “On Sale Only” checkbox to show discounted products.
   <img src="./images/manual_filters_onsale.JPG" alt="Filtered Products - On Sale" width="85%" />
 </p>
 
----
-
 ## AI-Powered Search
 
 The frontend supports AI-powered search via natural language queries (e.g. “vomero shoes”). These are parsed by the backend using OpenAI and matched with vector embeddings.
@@ -157,8 +146,6 @@ The frontend supports AI-powered search via natural language queries (e.g. “vo
 <p align="center">
   <img src="./images/ai_search_vomero_shoes.JPG" alt="AI Search - Vomero Shoes" width="85%" />
 </p>
-
----
 
 ## Mobile-First Responsive Layout
 
