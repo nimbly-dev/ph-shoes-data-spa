@@ -3,6 +3,7 @@ package com.nimbly.phshoesbackend.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbly.phshoesbackend.model.FactProductShoes;
+import com.nimbly.phshoesbackend.repository.FactProductShoesRepository;
 import com.nimbly.phshoesbackend.repository.specification.ProductShoesSpecifications;
 import com.nimbly.phshoesbackend.service.FactProductShoesService;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -105,5 +107,9 @@ public class FactProductShoesController {
             );
         }
         return service.aiSearch(escaped, pageable);
+    }
+    @GetMapping("/latest")
+    public List<FactProductShoesRepository.LatestData> latestByBrand() {
+        return service.getLatestDataByBrand();
     }
 }

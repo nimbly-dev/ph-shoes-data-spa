@@ -8,10 +8,15 @@ import { UIProductFilters } from '../types/UIProductFilters';
 
 const AI_QUERY_REGEX = /^[A-Za-z0-9\s!"#$%&'()*+,\-.\/:;<=>?@[\\\]^_`{|}~]+$/;
 const client: AxiosInstance = axios.create({
-  baseURL: (import.meta as any).env.VITE_API_BASE_URL, // e.g. "http://localhost:8080"
+  baseURL: (import.meta as any).env.VITE_API_BASE_URL, 
   // Remove or increase timeout if needed:
   // timeout: 20000,
 });
+
+export interface LatestData {
+  brand: string;
+  latestDate: string;
+}
 
 export interface AiPageResponse {
   filter: ProductSearchFilter;   // The AI‐computed filter
@@ -27,11 +32,11 @@ export async function fetchShoesByFilter(
   // Collect all query‐params into a flat object
   const params: Record<string, string | number> = {};
 
-  // 1) Always include any dropdown filters
+  // Always include any dropdown filters
   if (filters.brand)    params.brand = filters.brand;
   if (filters.gender)   params.gender = filters.gender;
 
-  // 2) Date vs. Date‐Range logic
+  // Date vs. Date‐Range logic
   if (filters.date) {
     params.date = filters.date;
   } else if (filters.startDate && filters.endDate) {
@@ -39,17 +44,17 @@ export async function fetchShoesByFilter(
     params.endDate   = filters.endDate;
   }
 
-  // 3) Keyword filter (was missing)
+  // Keyword filter (was missing)
   if (filters.keyword) {
     params.keyword = filters.keyword;
   }
 
-  // 4) “On Sale Only” filter (the key fix: only append when true)
+  // “On Sale Only” filter (the key fix: only append when true)
   if (filters.onSale === true) {
     params.onSale = 'true';
   }
 
-  // 5) Pagination
+  // Pagination
   params.page = page;
   params.size = size;
 
@@ -67,7 +72,6 @@ export async function fetchShoesAI(
   page: number,
   size: number
 ): Promise<Page<ProductShoe>> {
-  // 1) Quick frontend validation: same whitelist as server
   if (!AI_QUERY_REGEX.test(nlQuery)) {
     return Promise.reject(new Error(
       'Your search contains invalid characters. Please use letters, numbers, and basic punctuation only.'
@@ -81,14 +85,17 @@ export async function fetchShoesAI(
     );
     return response.data;
   } catch (err: any) {
-    // 2) If the server rejected it as a bad request, surface a clear message
     if (axios.isAxiosError(err) && err.response?.status === 400) {
       return Promise.reject(new Error(
         err.response.data?.message
           || 'Search query invalid. Please adjust and try again.'
       ));
     }
-    // 3) Otherwise bubble up
     return Promise.reject(err);
   }
+}
+
+export async function fetchLatestShoeData(): Promise<LatestData[]> {
+  const resp = await client.get<LatestData[]>('/api/v1/fact-product-shoes/latest');
+  return resp.data;
 }

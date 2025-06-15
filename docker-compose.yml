@@ -5,19 +5,24 @@ services:
     build:
       context: ./ph-shoes-backend
       dockerfile: DockerfileDev
+    image: ph-shoes-backend:dev
     env_file:
       - ./ph-shoes-backend/.env
-    image: ph-shoes-backend:dev
     container_name: ph-shoes-backend
     volumes:
       - ./ph-shoes-backend:/app
+      - ~/.m2:/root/.m2
+    working_dir: /app
     ports:
       - '8080:8080'
-    environment:
-      JAVA_TOOL_OPTIONS: "-Dsnowflake.jdbc.enableArrow=false"
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+    command: >
+      bash -lc "
+        mvn clean compile -q &&
+        mvn spring-boot:run \
+          -Dspring-boot.run.profiles=dev \
+          -Dspring-boot.run.fork=false \
+          -Dspring-boot.run.jvmArguments=\"${JAVA_TOOL_OPTIONS}\"
+      "
 
   ph_shoes_frontend:
     build:

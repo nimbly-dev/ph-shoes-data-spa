@@ -42,10 +42,9 @@ export const ProductShoeList: React.FC<Props> = ({
   const loading = isAiMode ? loadingAi : loadingManual;
   const error = isAiMode ? errorAi : errorManual;
 
-  // Safely read content, totalPages, and page number
   const contentArray: ProductShoe[] = pageData?.content ?? [];
   const totalPages = pageData?.totalPages ?? 0;
-  const currentPage = pageData?.number ?? page; // “number” is Spring’s page index
+  const currentPage = pageData?.number ?? page; 
 
   if (loading) {
     return (
@@ -103,7 +102,7 @@ export const ProductShoeList: React.FC<Props> = ({
       <Box display="flex" justifyContent="center" mt={4}>
         <Pagination
           count={totalPages}
-          page={currentPage + 1} // MUI is 1-based, Spring’s “number” is 0-based
+          page={currentPage + 1} 
           onChange={(_, newPage) => onPageChange(newPage - 1)}
           shape="rounded"
         />

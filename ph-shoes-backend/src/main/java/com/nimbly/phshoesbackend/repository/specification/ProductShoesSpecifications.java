@@ -1,16 +1,14 @@
 package com.nimbly.phshoesbackend.repository.specification;
 
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class ProductShoesSpecifications {
 
@@ -116,11 +114,9 @@ public class ProductShoesSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // — FILTERS (brand, gender, ranges, keywords, DWID subquery) —
             if (brand != null) {
                 predicates.add(cb.equal(cb.lower(root.get("brand")), brand.toLowerCase()));
-            }
-            if (model != null) {
-                predicates.add(cb.like(cb.lower(root.get("title")), "%" + model.toLowerCase() + "%"));
             }
             if (gender != null) {
                 predicates.add(cb.equal(cb.lower(root.get("gender")), gender.toLowerCase()));
@@ -141,62 +137,62 @@ public class ProductShoesSpecifications {
                 predicates.add(cb.lessThan(root.get("priceSale"), root.get("priceOriginal")));
             }
 
-            // Build predicate for titleKeywords (matching only title)
-            Predicate titleDisjunction = null;
-            if (titleKeywords != null && !titleKeywords.isEmpty()) {
-                Expression<String> titleExpr = root.get("title");
-                titleDisjunction = titleKeywords.stream()
-                        .map(kw -> cb.like(cb.lower(titleExpr), "%" + kw.toLowerCase() + "%"))
-                        .reduce(cb.disjunction(), cb::or);
+            // model vs titleKeywords
+            if (model != null) {
+                predicates.add(cb.like(cb.lower(root.get("title")), "%" + model.toLowerCase() + "%"));
+            } else if (titleKeywords != null && !titleKeywords.isEmpty()) {
+                Predicate[] titlePreds = titleKeywords.stream()
+                        .map(kw -> cb.like(cb.lower(root.get("title")), "%" + kw.toLowerCase() + "%"))
+                        .toArray(Predicate[]::new);
+                predicates.add(cb.or(titlePreds));
             }
 
-            // Build predicate for subtitleKeywords (matching title OR subtitle)
-            Predicate subtitleCrossDisjunction = null;
+            // subtitleKeywords (title OR subtitle)
             if (subtitleKeywords != null && !subtitleKeywords.isEmpty()) {
-                Expression<String> titleExpr = root.get("title");
-                Expression<String> subExpr = root.get("subtitle");
-                subtitleCrossDisjunction = subtitleKeywords.stream()
-                        .map(kw -> {
-                            String pattern = "%" + kw.toLowerCase() + "%";
-                            Predicate p1 = cb.like(cb.lower(titleExpr), pattern);
-                            Predicate p2 = cb.like(cb.lower(subExpr), pattern);
-                            return cb.or(p1, p2);
+                Expression<String> titleExpr = cb.lower(root.get("title"));
+                Expression<String> subExpr   = cb.lower(root.get("subtitle"));
+                Predicate[] subtitlePreds = subtitleKeywords.stream()
+                        .flatMap(kw -> {
+                            String pat = "%" + kw.toLowerCase() + "%";
+                            return Stream.of(
+                                    cb.like(titleExpr, pat),
+                                    cb.like(subExpr,   pat)
+                            );
                         })
-                        .reduce(cb.disjunction(), cb::or);
+                        .toArray(Predicate[]::new);
+                predicates.add(cb.or(subtitlePreds));
             }
 
-            // Combine titleDisjunction and subtitleCrossDisjunction
-            if (titleDisjunction != null && subtitleCrossDisjunction != null) {
-                predicates.add(cb.or(titleDisjunction, subtitleCrossDisjunction));
-            } else if (titleDisjunction != null) {
-                predicates.add(titleDisjunction);
-            } else if (subtitleCrossDisjunction != null) {
-                predicates.add(subtitleCrossDisjunction);
-            }
-
+            // latest-DWID subquery (unchanged)
             Subquery<String> maxDwid = query.subquery(String.class);
-            Root<FactProductShoes> sub = maxDwid.from(FactProductShoes.class);
-
-            Expression<String> subDwid = sub.get("key").get("dwid");
-            Expression<String> subId   = sub.get("key").get("id");
-
+            Root<FactProductShoes> subRoot = maxDwid.from(FactProductShoes.class);
+            Expression<String> subId = subRoot.get("key").get("id").as(String.class);
+            Expression<String> subDwid = subRoot.get("key").get("dwid").as(String.class);
             maxDwid.select(cb.greatest(subDwid))
-                    .where(cb.equal(subId, root.get("key").get("id")));
+                    .where(cb.equal(subId, root.get("key").get("id").as(String.class)));
+            predicates.add(cb.equal(root.get("key").get("dwid").as(String.class), maxDwid));
 
-            predicates.add(
-                    cb.equal(
-                            root.get("key").get("dwid"),
-                            maxDwid
-                    )
-            );
+            Predicate finalPred = cb.and(predicates.toArray(new Predicate[0]));
 
+            // — SORTING ON FINAL PRICE (sale?sale:original) —
+            if ("price_asc".equalsIgnoreCase(sortBy) || "price_desc".equalsIgnoreCase(sortBy)) {
+                // CASE WHEN price_sale < price_original THEN price_sale ELSE price_original END
+                Expression<Object> finalPriceExpr = cb.selectCase()
+                        .when(
+                                cb.lessThan(root.get("priceSale"), root.get("priceOriginal")),
+                                root.get("priceSale")
+                        )
+                        .otherwise(root.get("priceOriginal"));
 
-            return cb.and(predicates.toArray(new Predicate[0]));
+                if ("price_asc".equalsIgnoreCase(sortBy)) {
+                    query.orderBy(cb.asc(finalPriceExpr));
+                } else {
+                    query.orderBy(cb.desc(finalPriceExpr));
+                }
+            }
+
+            return finalPred;
         };
     }
-
-
-
-
 
 }

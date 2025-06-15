@@ -20,5 +20,5 @@ public class FilterCriteria {
     private Boolean onSale;
     private List<String> titleKeywords;
     private List<String> subtitleKeywords;
-    private String sortBy;   // new: e.g. "price_desc" if user wants most expensive
+    private String sortBy;
 }

@@ -1,0 +1,1 @@
+export { LatestDataPopover } from './LatestDataPopover';

@@ -1,4 +1,6 @@
-import React, { useState, useContext } from 'react';
+// App.tsx
+
+import React, { useState, useContext, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -18,23 +20,41 @@ import { AISearch } from './components/AISearch/AISearch';
 import { FilterControls } from './components/FilterControls/FilterControls';
 import { ProductShoeList } from './components/ProductShoeList/ProductShoeList';
 import { UIProductFilters } from './types/UIProductFilters';
+import { LatestDataPopover } from './components/Toggles/LatestDataPopover';
+import DataUsageIcon from '@mui/icons-material/DataUsage';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
   const theme    = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Adjust page size based on viewport
+  const pageSize = isMobile ? 8 : 15;
+  const [page, setPage] = useState(0);
+
+  // Whenever pageSize changes (e.g. rotate device), reset to first page
+  useEffect(() => {
+    setPage(0);
+  }, [pageSize]);
+
   const [searchMode, setSearchMode]   = useState<'ai' | 'manual'>('manual');
   const [aiQuery, setAiQuery]         = useState<string>('');
   const [aiTextInput, setAiTextInput] = useState<string>('');
   const [aiPage, setAiPage]           = useState(0);
+
+  const today = new Date().toISOString().slice(0, 10); // “YYYY-MM-DD”
+  const defaultFilters: UIProductFilters = {
+    startDate: today,
+    endDate:   today,
+  };
+
   const [draftFilters, setDraftFilters]   = useState<UIProductFilters>({});
   const [activeFilters, setActiveFilters] = useState<UIProductFilters>({});
-  const [page, setPage]               = useState(0);
-  const pageSize                      = 15;
-  const [drawerOpen, setDrawerOpen]   = useState(false);
 
-  const hideThemeToggle = isMobile && drawerOpen;
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const hideFixedToggles = isMobile && drawerOpen;
+
+  const [latestAnchor, setLatestAnchor] = useState<HTMLElement | null>(null);
 
   const handleModeToggle = (
     _: React.MouseEvent<HTMLElement>,
@@ -75,29 +95,45 @@ export default function App() {
   };
 
   const handleResetFilters = () => {
-    setDraftFilters({});
-    setActiveFilters({});
+    setDraftFilters({ ...defaultFilters });
+    setActiveFilters({ ...defaultFilters });
     setPage(0);
     setDrawerOpen(false);
   };
 
   return (
     <>
-      {/* Theme toggle (hidden when mobile filter drawer is open) */}
-      {!hideThemeToggle && (
+      {/* Theme & Latest-Data toggles */}
+      {!hideFixedToggles && (
         <Box
           sx={{
             position: 'fixed',
-            top: (t) => t.spacing(2),
-            right: (t) => t.spacing(2),
-            zIndex: (t) => t.zIndex.tooltip,
+            top:    (t) => t.spacing(2),
+            right:  (t) => t.spacing(2),
+            display: 'flex',
+            gap:      1,
+            zIndex:   (t) => t.zIndex.tooltip,
           }}
         >
-          <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-            <IconButton onClick={toggleMode} color="inherit">
-              {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
+          <Tooltip title="Latest data by brand">
+            <IconButton
+              color="inherit"
+              onClick={(e) => setLatestAnchor(a => a ? null : e.currentTarget)}
+            >
+              <DataUsageIcon />
             </IconButton>
           </Tooltip>
+
+          <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+            <IconButton onClick={toggleMode} color="inherit">
+              {mode === 'light' ? <Brightness4/> : <Brightness7/>}
+            </IconButton>
+          </Tooltip>
+
+          <LatestDataPopover
+            anchorEl={latestAnchor}
+            onClose={() => setLatestAnchor(null)}
+          />
         </Box>
       )}
 

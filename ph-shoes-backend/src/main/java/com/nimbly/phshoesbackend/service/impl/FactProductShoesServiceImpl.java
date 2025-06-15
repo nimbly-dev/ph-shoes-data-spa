@@ -53,11 +53,17 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
     @Override
     @Transactional
     public Page<FactProductShoes> aiSearch(String nlQuery, Pageable pageable) {
+        // 1) Parse & normalize
         FilterCriteria criteria = intentParser.parseIntent(nlQuery);
-        System.out.println("Parsed FilterCriteria = " + criteria);
-
         filterCriteriaNormalizer.normalize(criteria);
 
+        // 2) If user said “cheapest” but parser didn’t set sortBy, do it now
+        if ((criteria.getSortBy() == null || criteria.getSortBy().isBlank())
+                && nlQuery.toLowerCase().contains("cheapest")) {
+            criteria.setSortBy("price_asc");
+        }
+
+        // 3) Build spec with the correct sortBy
         Specification<FactProductShoes> spec = ProductShoesSpecifications.byFilters(
                 criteria.getBrand(),
                 criteria.getModel(),
@@ -69,24 +75,30 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
                 criteria.getOnSale(),
                 criteria.getTitleKeywords(),
                 criteria.getSubtitleKeywords(),
-                criteria.getSortBy()
+                criteria.getSortBy()      // now “price_asc” if needed
         );
 
-        List<FactProductShoes> filteredShoes = shoeRepo.findAll(spec);
-        if (filteredShoes.isEmpty()) {
+        // 4) If price sorting requested, let JPA/Hibernate do it WITH pagination
+        if ("price_asc".equalsIgnoreCase(criteria.getSortBy())
+                || "price_desc".equalsIgnoreCase(criteria.getSortBy())) {
+            return shoeRepo.findAll(spec, pageable);
+        }
+
+        // 5) Otherwise vector fallback
+        List<FactProductShoes> filtered = shoeRepo.findAll(spec);
+        if (filtered.isEmpty()) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
-
-        if ("price_desc".equalsIgnoreCase(criteria.getSortBy())) {
-            return paginateUtil.paginateByPriceDesc(filteredShoes, pageable);
-        }
-
         return paginateUtil.paginateByVectorScore(
-                filteredShoes,
-                nlQuery,
-                pageable,
+                filtered, nlQuery, pageable,
                 embeddingService,
                 embeddingRepo
         );
     }
+
+    @Override
+    public List<FactProductShoesRepository.LatestData> getLatestDataByBrand() {
+        return shoeRepo.findLatestDatePerBrand();
+    }
+
 }

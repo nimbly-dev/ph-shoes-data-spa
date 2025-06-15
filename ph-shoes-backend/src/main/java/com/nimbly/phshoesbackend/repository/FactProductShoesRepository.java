@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -68,4 +69,26 @@ public interface FactProductShoesRepository
             nativeQuery = true)
     List<Object[]> findAllWithEmbeddingByIds(@Param("idsJson") String idsJson);
 
+
+    static interface LatestData {
+        String    getBrand();
+        LocalDate getLatestDate();
+    }
+
+    @Query(value = """
+    SELECT
+      BRAND                    AS brand,
+      MAX(
+        TO_DATE(
+          CONCAT(
+            YEAR, '-', LPAD(MONTH,2,'0'), '-', LPAD(DAY,2,'0')
+          ),
+          'YYYY-MM-DD'
+        )
+      )                          AS latestDate
+    FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES
+    WHERE BRAND IS NOT NULL
+    GROUP BY BRAND
+    """, nativeQuery = true)
+    List<LatestData> findLatestDatePerBrand();
 }
