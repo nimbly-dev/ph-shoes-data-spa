@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';  
+import 'react-date-range/dist/theme/default.css';
 import { formatISO } from 'date-fns';
 import { UIProductFilters } from '../../types/UIProductFilters';
 
@@ -23,23 +23,34 @@ const BRANDS = ['nike', 'adidas', 'newbalance', 'asics', 'worldbalance', 'hoka']
 const GENDERS = ['male', 'female', 'unisex'] as const;
 const CONTROL_MIN_WIDTH = 120;
 
+// compute “yesterday” once
+const getYesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d;
+};
+
 interface Props {
   filters: UIProductFilters;
   onChange: (newFilters: UIProductFilters) => void;
 }
 
 export const FilterControls: React.FC<Props> = ({ filters, onChange }) => {
-  // ---- Date‐range state ----
-  const [range, setRange] = useState([{
-    key: 'selection',
-    startDate: filters.startDate ? new Date(filters.startDate) : new Date(),
-    endDate:   filters.endDate   ? new Date(filters.endDate)   : new Date(),
-  }]);
+  // initial range: use filters if present, else yesterday→yesterday
+  const yesterday = getYesterday();
+  const [range, setRange] = useState([
+    {
+      key: 'selection',
+      startDate: filters.startDate ? new Date(filters.startDate) : yesterday,
+      endDate:   filters.endDate   ? new Date(filters.endDate)   : yesterday,
+    }
+  ]);
 
-  // Anchor for popover
+  // Popover anchor
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
+  // whenever `range` changes, push it upstream
   useEffect(() => {
     const sel = range[0];
     onChange({
@@ -50,16 +61,16 @@ export const FilterControls: React.FC<Props> = ({ filters, onChange }) => {
       endDate:   sel.endDate
         ? formatISO(sel.endDate,   { representation: 'date' })
         : undefined,
-      date: undefined,
+      date: undefined,  // clear any single-date override
     });
+    // we really only want this on first mount or when the user changes the picker:
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
-  const handleOpen = (e: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(e.currentTarget);
-  };
+  const handleOpen  = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
 
-  // Common handlers
+  // generic Select handler
   const handleSelect =
     <K extends keyof UIProductFilters>(key: K) =>
     (e: SelectChangeEvent<string>) => {
@@ -69,12 +80,11 @@ export const FilterControls: React.FC<Props> = ({ filters, onChange }) => {
   const handleKeyword = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...filters, keyword: e.target.value || undefined });
   };
-
   const handleOnSale = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...filters, onSale: e.target.checked || undefined });
   };
 
-  // Format display text: "YYYY-MM-DD → YYYY-MM-DD"
+  // pretty display: “YYYY-MM-DD → YYYY-MM-DD”
   const displayRange = filters.startDate && filters.endDate
     ? `${filters.startDate} → ${filters.endDate}`
     : '';
@@ -125,7 +135,7 @@ export const FilterControls: React.FC<Props> = ({ filters, onChange }) => {
         </Select>
       </FormControl>
 
-      {/* Date-range dropdown */}
+      {/* Date-range picker */}
       <Box sx={{ minWidth: CONTROL_MIN_WIDTH * 2, flexGrow: 1, maxWidth: 400 }}>
         <TextField
           size="small"
@@ -136,39 +146,34 @@ export const FilterControls: React.FC<Props> = ({ filters, onChange }) => {
           InputProps={{ readOnly: true }}
           fullWidth
         />
-          <Popover
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handleClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top',    horizontal: 'left' }}
-
-
-            PaperProps={{
-              sx: {
-                bgcolor:      'background.paper',
-                color:        'text.primary',
-                borderRadius: 1,
-                boxShadow:    3,
-                mt:           1,
-                maxHeight:   '80vh',
-                overflow:    'auto',
-              },
-            }}
-          >
-            <DateRange
-              ranges={range}
-              onChange={r => setRange([r.selection])}
-              showSelectionPreview
-              moveRangeOnFirstSelection={false}
-              retainEndDateOnFirstSelection
-              months={1}
-              direction="horizontal"
-            />
-          </Popover>
-
-
-
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handleClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top',    horizontal: 'left' }}
+          PaperProps={{
+            sx: {
+              bgcolor:      'background.paper',
+              color:        'text.primary',
+              borderRadius: 1,
+              boxShadow:    3,
+              mt:           1,
+              maxHeight:   '80vh',
+              overflow:    'auto',
+            },
+          }}
+        >
+          <DateRange
+            ranges={range}
+            onChange={r => setRange([r.selection])}
+            showSelectionPreview
+            moveRangeOnFirstSelection={false}
+            retainEndDateOnFirstSelection
+            months={1}
+            direction="horizontal"
+          />
+        </Popover>
       </Box>
 
       {/* Keyword */}

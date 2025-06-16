@@ -1,4 +1,4 @@
-// App.tsx
+// src/App.tsx
 
 import React, { useState, useContext, useEffect } from 'react';
 import {
@@ -15,47 +15,56 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { Brightness4, Brightness7, FilterList } from '@mui/icons-material';
+import DataUsageIcon from '@mui/icons-material/DataUsage';
+
 import { ColorModeContext } from './themes/ThemeContext';
 import { AISearch } from './components/AISearch/AISearch';
 import { FilterControls } from './components/FilterControls/FilterControls';
 import { ProductShoeList } from './components/ProductShoeList/ProductShoeList';
-import { UIProductFilters } from './types/UIProductFilters';
 import { LatestDataPopover } from './components/Toggles/LatestDataPopover';
-import DataUsageIcon from '@mui/icons-material/DataUsage';
+import { UIProductFilters } from './types/UIProductFilters';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
-  const theme    = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const theme               = useTheme();
+  const isMobile            = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Adjust page size based on viewport
+  // ---- paging logic ----
   const pageSize = isMobile ? 8 : 15;
   const [page, setPage] = useState(0);
-
-  // Whenever pageSize changes (e.g. rotate device), reset to first page
   useEffect(() => {
+    // whenever pageSize flips (e.g. rotate / resize), reset to first page
     setPage(0);
   }, [pageSize]);
+
+  // ---- default filters: brand + date range (yesterday → today) ----
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const todayStr     = today.toISOString().slice(0, 10);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+  const defaultFilters: UIProductFilters = {
+    brand:     'newbalance',
+    startDate: yesterdayStr,
+    endDate:   todayStr,
+  };
+
+  // ---- filter state ----
+  const [draftFilters, setDraftFilters]   = useState<UIProductFilters>(defaultFilters);
+  const [activeFilters, setActiveFilters] = useState<UIProductFilters>(defaultFilters);
 
   const [searchMode, setSearchMode]   = useState<'ai' | 'manual'>('manual');
   const [aiQuery, setAiQuery]         = useState<string>('');
   const [aiTextInput, setAiTextInput] = useState<string>('');
   const [aiPage, setAiPage]           = useState(0);
 
-  const today = new Date().toISOString().slice(0, 10); // “YYYY-MM-DD”
-  const defaultFilters: UIProductFilters = {
-    startDate: today,
-    endDate:   today,
-  };
-
-  const [draftFilters, setDraftFilters]   = useState<UIProductFilters>({});
-  const [activeFilters, setActiveFilters] = useState<UIProductFilters>({});
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const hideFixedToggles = isMobile && drawerOpen;
-
+  const [drawerOpen, setDrawerOpen]     = useState(false);
+  const hideFixedToggles                = isMobile && drawerOpen;
   const [latestAnchor, setLatestAnchor] = useState<HTMLElement | null>(null);
 
+  // ---- handlers ----
   const handleModeToggle = (
     _: React.MouseEvent<HTMLElement>,
     nextMode: 'ai' | 'manual' | null
@@ -103,16 +112,16 @@ export default function App() {
 
   return (
     <>
-      {/* Theme & Latest-Data toggles */}
+      {/* Fixed toggles: latest-data & theme */}
       {!hideFixedToggles && (
         <Box
           sx={{
             position: 'fixed',
-            top:    (t) => t.spacing(2),
-            right:  (t) => t.spacing(2),
-            display: 'flex',
-            gap:      1,
-            zIndex:   (t) => t.zIndex.tooltip,
+            top:      (t) => t.spacing(2),
+            right:    (t) => t.spacing(2),
+            display:  'flex',
+            gap:       1,
+            zIndex:    (t) => t.zIndex.tooltip,
           }}
         >
           <Tooltip title="Latest data by brand">
@@ -126,7 +135,7 @@ export default function App() {
 
           <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
             <IconButton onClick={toggleMode} color="inherit">
-              {mode === 'light' ? <Brightness4/> : <Brightness7/>}
+              {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
             </IconButton>
           </Tooltip>
 
@@ -142,7 +151,7 @@ export default function App() {
           PH-Shoes Catalog
         </Typography>
 
-        {/* Mode Toggle */}
+        {/* search mode toggle */}
         <Box display="flex" justifyContent="center" mb={3}>
           <ToggleButtonGroup
             value={searchMode}
@@ -155,7 +164,7 @@ export default function App() {
           </ToggleButtonGroup>
         </Box>
 
-        {/* AI Search */}
+        {/* AI search panel */}
         {searchMode === 'ai' && (
           <AISearch
             activeQuery={aiQuery}
@@ -164,7 +173,7 @@ export default function App() {
           />
         )}
 
-        {/* Manual Filters */}
+        {/* manual filters panel */}
         {searchMode === 'manual' && (
           <>
             {isMobile ? (
@@ -183,10 +192,10 @@ export default function App() {
                   ModalProps={{ keepMounted: true }}
                   PaperProps={{
                     sx: {
-                      width: '80vw',
-                      maxWidth: 300,
-                      p: 2,
-                      bgcolor: 'background.paper',
+                      width:       '80vw',
+                      maxWidth:    300,
+                      p:           2,
+                      bgcolor:     'background.paper',
                     },
                   }}
                 >
@@ -195,7 +204,7 @@ export default function App() {
                   </Typography>
                   <FilterControls
                     filters={draftFilters}
-                    onChange={(newFilters) => setDraftFilters(newFilters)}
+                    onChange={(f) => setDraftFilters(f)}
                   />
                   <Button
                     variant="contained"
@@ -219,7 +228,7 @@ export default function App() {
               <Box mb={4}>
                 <FilterControls
                   filters={draftFilters}
-                  onChange={(newFilters) => setDraftFilters(newFilters)}
+                  onChange={(f) => setDraftFilters(f)}
                 />
                 <Box display="flex" justifyContent="center" gap={2} mt={1}>
                   <Button variant="contained" onClick={handleApplyFilters}>
@@ -234,7 +243,7 @@ export default function App() {
           </>
         )}
 
-        {/* Product List */}
+        {/* product list */}
         <ProductShoeList
           aiQuery={aiQuery}
           manualFilters={activeFilters}
