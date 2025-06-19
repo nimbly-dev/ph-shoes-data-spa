@@ -18,10 +18,6 @@
 
 <p align="center">
   <strong>You are viewing: <code>ph-shoes-data-spa</code> repository</strong><br />
-  <a href="https://ph-shoes-frontend.onrender.com/">
-    🔗 <strong>Live Demo:</strong> ph-shoes-frontend.onrender.com
-  </a><br />
-  <em style="font-size: 0.9em;">(Free-tier Render instance — may take ~1–3 minutes to wake if inactive)</em>
 </p>
 
 
