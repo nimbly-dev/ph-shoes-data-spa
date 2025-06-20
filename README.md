@@ -34,7 +34,7 @@ This project is divided into two main components:
 The backend is responsible for exposing APIs that serve product data directly from the Snowflake-transformed model `fact_product_shoes`. It includes:
 
 * **JPA Specification-based Filtering**
-  Allows users to search and filter products by brand, gender, age group, price, and more — all dynamically composed at runtime using JPA Criteria Specifications.
+  Allows users to search and filter products by brand, gender, price, and more — all dynamically composed at runtime using JPA Criteria Specifications.
 
 * **AI-Powered Search Endpoint**
   Accepts natural language queries (e.g., “cheap running shoes for men”) and processes them via:
@@ -70,7 +70,6 @@ This endpoint allows clients to filter product listings using structured query p
 | ----------- | ------------ | ----------------------------------------------------- |
 | `brand`     | `string`     | Filter by shoe brand (e.g. `nike`, `hoka`)            |
 | `gender`    | `string`     | Filter by gender (`male`, `female`, `unisex`)         |
-| `ageGroup`  | `string`     | Filter by age group (`adult`, `kids`, etc.)           |
 | `date`      | `YYYY-MM-DD` | Fetch entries from a specific collection date         |
 | `startDate` | `YYYY-MM-DD` | Start of a date range (must be paired with `endDate`) |
 | `endDate`   | `YYYY-MM-DD` | End of a date range                                   |
