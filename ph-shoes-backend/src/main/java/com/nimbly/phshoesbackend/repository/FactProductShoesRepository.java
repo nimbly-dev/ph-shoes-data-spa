@@ -24,51 +24,98 @@ public interface FactProductShoesRepository
     @Query(value = "SELECT * FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES", nativeQuery = true)
     List<Map<String,Object>> rawAll();
 
+
+
+
     /**
-     * Given a JSON array of IDs (“idsJson”) and a JSON‐array embedding (“queryEmbeddingJson”),
-     * return only those rows whose id is in idsJson, ordered by VECTOR_COSINE_SIMILARITY.
+     * Full-catalog vector search.
+     * We quote every alias in lower-case so Snowflake’s JDBC metadata
+     * Use Snowflake built-in Vector Search VECTOR_COSINE_SIMILARITY() function
+     * returns labels like “dwid”, “age_group”, etc., which Hibernate will match as snowflake columns are always UPPERCASE.
      */
     @Query(value = """
-        SELECT f.*
+        SELECT
+          f.ID             AS "id",
+          f.DWID           AS "dwid",
+          f.BRAND          AS "brand",
+          f.YEAR           AS "year",
+          f.MONTH          AS "month",
+          f.DAY            AS "day",
+          f.TITLE          AS "title",
+          f.SUBTITLE       AS "subtitle",
+          f.URL            AS "url",
+          f.IMAGE          AS "image",
+          f.PRICE_SALE     AS "price_sale",
+          f.PRICE_ORIGINAL AS "price_original",
+          f.GENDER         AS "gender",
+          f.AGE_GROUP      AS "age_group"
         FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES f
         JOIN PH_SHOES_DB.PRODUCTION_MARTS.EMBEDDING_FACT_PRODUCT_SHOES e
-          ON f.id = e.id
-        WHERE f.id IN (
-          SELECT VALUE::STRING
-          FROM TABLE(FLATTEN(input => PARSE_JSON(:idsJson)))
-        )
+          ON f.ID = e.ID
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY f.ID ORDER BY f.DWID DESC) = 1
         ORDER BY VECTOR_COSINE_SIMILARITY(
-          VECTOR_PARSE(e.embedding),
-          VECTOR_PARSE(PARSE_JSON(:queryEmbeddingJson))
+          e.embedding::VECTOR(FLOAT,1536),
+          PARSE_JSON(:queryEmbeddingJson)::VECTOR(FLOAT,1536)
         ) DESC
-        LIMIT :#{#pageable.pageSize}
-        OFFSET :#{#pageable.offset}
+        LIMIT   :#{#pageable.pageSize}
+        OFFSET  :#{#pageable.offset}
         """,
             nativeQuery = true)
-    List<FactProductShoes> findByIdsVectorRanked(
-            @Param("idsJson") String idsJson,
+    List<FactProductShoes> findAllByVector(
             @Param("queryEmbeddingJson") String queryEmbeddingJson,
             Pageable pageable
     );
 
-    /**
-     * Given a JSON array of IDs (“idsJson”), return each product and its embedding JSON.
-     * e.embedding::VARCHAR returns the VARIANT array as a JSON string.
-     */
+
     @Query(value = """
-        SELECT f.*,
-               e.embedding::VARCHAR AS embedding_json
+        SELECT
+          f.ID             AS "id",
+          f.DWID           AS "dwid",
+          f.BRAND          AS "brand",
+          f.YEAR           AS "year",
+          f.MONTH          AS "month",
+          f.DAY            AS "day",
+          f.TITLE          AS "title",
+          f.SUBTITLE       AS "subtitle",
+          f.URL            AS "url",
+          f.IMAGE          AS "image",
+          f.PRICE_SALE     AS "price_sale",
+          f.PRICE_ORIGINAL AS "price_original",
+          f.GENDER         AS "gender",
+          f.AGE_GROUP      AS "age_group"
         FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES f
         JOIN PH_SHOES_DB.PRODUCTION_MARTS.EMBEDDING_FACT_PRODUCT_SHOES e
-          ON f.id = e.id
-        WHERE f.id IN (
-          SELECT VALUE::STRING
-          FROM TABLE(FLATTEN(input => PARSE_JSON(:idsJson)))
-        )
+          ON f.ID = e.ID
+        WHERE f.PRICE_SALE < f.PRICE_ORIGINAL
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY f.ID ORDER BY f.DWID DESC) = 1
+        ORDER BY VECTOR_COSINE_SIMILARITY(
+          e.embedding::VECTOR(FLOAT,1536),
+          PARSE_JSON(:queryEmbeddingJson)::VECTOR(FLOAT,1536)
+        ) DESC
+        LIMIT   :#{#pageable.pageSize}
+        OFFSET  :#{#pageable.offset}
         """,
             nativeQuery = true)
-    List<Object[]> findAllWithEmbeddingByIds(@Param("idsJson") String idsJson);
+    List<FactProductShoes> findOnSaleByVector(
+            @Param("queryEmbeddingJson") String queryEmbeddingJson,
+            Pageable pageable
+    );
 
+
+    @Query(value = """
+        SELECT COUNT(DISTINCT ID)
+          FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES
+        """,
+            nativeQuery = true)
+    long countDistinctProducts();
+
+    @Query(value = """
+        SELECT COUNT(DISTINCT ID)
+          FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES
+         WHERE PRICE_SALE < PRICE_ORIGINAL
+        """,
+            nativeQuery = true)
+    long countDistinctOnSaleProducts();
 
     static interface LatestData {
         String    getBrand();

@@ -18,8 +18,10 @@
 
 <p align="center">
   <strong>You are viewing: <code>ph-shoes-data-spa</code> repository</strong><br />
+  <a href="https://ph-shoes-frontend.onrender.com/">
+    <img src="https://img.shields.io/badge/Live_Render-✔️-brightgreen" alt="Live on Render" style="margin-top: 8px;" />
+  </a>
 </p>
-
 
 ---
 
@@ -34,7 +36,7 @@ This project is divided into two main components:
 The backend is responsible for exposing APIs that serve product data directly from the Snowflake-transformed model `fact_product_shoes`. It includes:
 
 * **JPA Specification-based Filtering**
-  Allows users to search and filter products by brand, gender, price, and more — all dynamically composed at runtime using JPA Criteria Specifications.
+  Allows users to search and filter products by brand, gender, age group, price, and more — all dynamically composed at runtime using JPA Criteria Specifications.
 
 * **AI-Powered Search Endpoint**
   Accepts natural language queries (e.g., “cheap running shoes for men”) and processes them via:
@@ -55,60 +57,210 @@ The frontend is a **single-page application** (SPA) built with React, styled usi
 
 ---
 
-#  API Endpoints — PH Shoes Data SPA
+# PH Shoes Data SPA — API Endpoints
 
-The backend exposes a pair of RESTful endpoints to serve product data for the frontend. These support both **manual filtering** via query parameters and **AI-powered search** using natural language queries.
+The backend exposes two primary RESTful endpoints to serve shoe product data:
 
+1. **Manual Filtering** via structured query parameters  
+2. **AI-Powered Search** via natural-language queries with OpenAI embeddings
 
-##  `GET /api/v1/fact-product-shoes`
+### 1. Manual Filtering  
+**`GET /api/v1/fact-product-shoes`**
 
-This endpoint allows clients to filter product listings using structured query parameters. It's designed to support pagination and multiple optional filters.
+Uses Spring Data JPA’s `JpaSpecificationExecutor` and the Specification pattern to build dynamic `WHERE` clauses. Supports pagination and multiple optional filters in any combination.
 
-###  Supported Query Parameters
+#### Core Implementation
+- **Repository** implements `JpaSpecificationExecutor<FactProductShoes>`.
+- **Controller** builds an initial “true” predicate, then `.and(...)` for each supplied param.
+- **Specs** live in `ProductShoesSpecifications` (e.g. `hasBrand()`, `collectedBetween()`, `isOnSale()`, `hasKeyword()`).
 
-| Parameter   | Type         | Description                                           |
-| ----------- | ------------ | ----------------------------------------------------- |
-| `brand`     | `string`     | Filter by shoe brand (e.g. `nike`, `hoka`)            |
-| `gender`    | `string`     | Filter by gender (`male`, `female`, `unisex`)         |
-| `date`      | `YYYY-MM-DD` | Fetch entries from a specific collection date         |
-| `startDate` | `YYYY-MM-DD` | Start of a date range (must be paired with `endDate`) |
-| `endDate`   | `YYYY-MM-DD` | End of a date range                                   |
-| `keyword`   | `string`     | Search in product title or subtitle                   |
-| `onSale`    | `boolean`    | Set to `true` to only return discounted products      |
-| `page`      | `number`     | Page number (pagination)                              |
-| `size`      | `number`     | Number of items per page (default: 20)                |
+#### Supported Query Parameters
 
-###  Example:
+| Parameter    | Type         | Notes                                                                 |
+|--------------|--------------|-----------------------------------------------------------------------|
+| `brand`      | `string`     | Exact match on `brand` (normalized to lowercase, non-alphanumeric stripped) |
+| `gender`     | `string`     | Normalized: “men”→`male`, “women”→`female`; kids/children → subtitle   |
+| `ageGroup`   | `string`     | e.g. `adult`, `kids`                                                  |
+| `date`       | `YYYY-MM-DD` | Single collection date                                                |
+| `startDate`  | `YYYY-MM-DD` | Requires `endDate`                                                    |
+| `endDate`    | `YYYY-MM-DD` |                                                                        |
+| `keyword`    | `string`     | SQL `LIKE` against `title` **OR** `subtitle`                           |
+| `onSale`     | `boolean`    | `true` ⇒ `priceSale < priceOriginal`                                   |
+| `page`       | `number`     | Zero-based page index                                                  |
+| `size`       | `number`     | Items per page (default: 20)                                           |
 
+#### Example Request
+```http
+GET /api/v1/fact-product-shoes?
+    brand=nike&
+    onSale=true&
+    startDate=2025-06-01&
+    endDate=2025-06-10&
+    keyword=running&
+    page=0&
+    size=15
+````
+
+#### Example Hibernate Logs
+
+```sql
+SELECT fps.*
+  FROM fact_product_shoes fps
+ WHERE 1 = 1
+   AND lower(fps.brand) = ?
+   AND fps.price_sale < fps.price_original
+   AND lower(fps.title) LIKE ?
+   AND fps.dwid = (
+       SELECT max(fps2.dwid)
+         FROM fact_product_shoes fps2
+        WHERE fps2.id = fps.id
+     )
+ offset ? rows fetch first ? rows only;
+
+SELECT count(*)
+  FROM fact_product_shoes fps
+ WHERE 1 = 1;
 ```
-GET /api/v1/fact-product-shoes?brand=nike&onSale=true&page=0&size=15
+
+---
+
+### 2. AI-Powered Search
+
+**`GET /api/v1/fact-product-shoes/search?q={naturalLanguage}&page={n}&size={m}`**
+
+Performs a natural-language search by combining:
+
+1. **Pre-Filter Extraction** (`PreFilterExtractorUtils`)
+   • Pulls out any “deterministic” filters (brand, model, gender, price ranges, onSale flag, title/subtitle keywords) from the raw query
+   • Returns a “leftover” string for fuzzy intent parsing
+
+2. **Intent Parsing** (`OpenAiIntentParserService`)
+   • Sends the leftover text to GPT-4 with a prompt template
+   • Maps the JSON response into a secondary `FilterCriteria` (fuzzy criteria)
+
+3. **Merge Criteria**
+   • Deterministic fields (model, numeric ranges) from pre-extraction take precedence; title keywords from fuzzy parsing overwrite base keywords
+
+4. **Numeric-Filter Reset**
+   *If the original NL query contains **no digits**, all numeric filters (`priceSale{Min,Max}`, `priceOriginal{Min,Max}`) are cleared to avoid unintended price constraints.*
+
+5. **Normalize** (`FilterCriteriaNormalizer`)
+   • Cleans up brand names, maps gender synonyms (e.g. “women” → `female`), pushes age groups into subtitle keywords, etc.
+
+6. **Build JPA Specification**
+
+   ```java
+   Specification<FactProductShoes> spec = ProductShoesSpecifications.byFilters(
+       brand, model, gender,
+       priceSaleMin, priceSaleMax,
+       priceOriginalMin, priceOriginalMax,
+       onSale, titleKeywords, subtitleKeywords,
+       sortBy
+   );
+   ```
+
+7. **Execute Query & Ranking**
+
+  * **If** `sortBy=price_asc|price_desc`
+    → Delegate directly to the database (`shoeRepo.findAll(spec, pageable)`) for SQL sorting
+  * **Else**
+
+    1. Fetch all matching rows in memory
+    2. Generate an embedding for the full NL query (`text-embedding-ada-002`)
+    3. Retrieve stored embeddings from `EMBEDDING_FACT_PRODUCT_SHOES`
+    4. Compute cosine similarity, sort descending
+    5. Return the requested page using `FactProductShoesPaginateUtil.paginateByVectorScore(...)`
+
+---
+
+#### Example SQL
+
+**Filtered Fetch (DB sort or no vector fallback)**
+
+```sql
+SELECT f.*
+  FROM fact_product_shoes f
+ WHERE /* dynamic filters from Specification */
+ ORDER BY /* price_sale ASC|DESC if requested */
+ LIMIT :size OFFSET :offset;
 ```
 
-##  `GET /api/v1/fact-product-shoes/search?q=...`
+**Vector Ranking (in-memory fallback)**
 
-This endpoint performs a **semantic search** based on a natural language query. It combines prompt engineering and vector similarity against pre-generated OpenAI embeddings.
-
-###  Input Validation:
-
-The query string is:
-
-* Escaped to prevent HTML/script injection
-* Whitelisted to alphanumeric characters, basic punctuation, and space
-* Rejected if it contains unsafe patterns (`<`, `>`, `%`, `;`)
-
-#### 🔍 Query Parameters
-
-| Parameter | Type     | Description                                                   |
-| --------- | -------- | ------------------------------------------------------------- |
-| `q`       | `string` | Natural language query (e.g. `"cheap running shoes for men"`) |
-| `page`    | `number` | Page number (default: 0)                                      |
-| `size`    | `number` | Items per page (default: 15)                                  |
-
-####  Example:
-
+```sql
+-- Retrieve top N by cosine similarity
+SELECT f.*, e.embedding::VARCHAR AS embedding_json
+  FROM fact_product_shoes f
+  JOIN embedding_fact_product_shoes e
+    ON f.id = e.id
+ WHERE f.id IN (/* list of filtered IDs */)
+ ORDER BY VECTOR_COSINE_SIMILARITY(
+    VECTOR_PARSE(e.embedding),
+    VECTOR_PARSE(PARSE_JSON(:queryEmbeddingJson))
+  ) DESC
+ LIMIT :size OFFSET :offset;
 ```
-GET /api/v1/fact-product-shoes/search?q=affordable+trail+shoes+for+women
+
+---
+
+#### Example Request & Response
+
+```http
+GET /api/v1/fact-product-shoes/search?
+    q=Adidas+Ultraboost+22+on+sale+for+women&
+    page=0&
+    size=15
 ```
+
+```json
+{
+  "content": [
+    {
+      "id": "GX9162",
+      "dwid": "20250610",
+      "brand": "adidas",
+      "year": 2025,
+      "month": 6,
+      "day": 10,
+      "title": "Ultraboost 22 Shoes",
+      "subtitle": "Women Running",
+      "url": "https://www.adidas.com.ph/.../GX9162.html",
+      "image": "https://assets.adidas.com/.../ultraboost-22-shoes.jpg",
+      "priceSale": 6000.0,
+      "priceOriginal": 10000.0,
+      "gender": "female",
+      "ageGroup": "adult"
+    },
+    {
+      "id": "GX5591",
+      "dwid": "20250610",
+      "brand": "adidas",
+      "year": 2025,
+      "month": 6,
+      "day": 10,
+      "title": "ULTRABOOST 22 SHOES",
+      "subtitle": "Women Running",
+      "url": "https://www.adidas.com.ph/.../GX5591.html",
+      "image": "https://assets.adidas.com/.../ultraboost-22-shoes.jpg",
+      "priceSale": 6000.0,
+      "priceOriginal": 10000.0,
+      "gender": "female",
+      "ageGroup": "adult"
+    }
+  ],
+  "pageable": { /* pagination metadata */ },
+  "totalPages": 1,
+  "totalElements": 2,
+  "first": true,
+  "last": true,
+  "numberOfElements": 2
+}
+```
+
+
+### Error Handling
+
+* **400 Bad Request** if the `q` parameter contains invalid characters or fails whitelist.
 
 ---
 
