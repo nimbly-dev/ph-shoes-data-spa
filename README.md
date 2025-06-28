@@ -121,7 +121,6 @@ SELECT count(*)
 
 ---
 
-
 ### 2. AI-Powered Search
 
 **Endpoint**
@@ -132,7 +131,6 @@ GET /api/v1/fact-product-shoes/search
   & page={n}
   & size={m}
 ```
-
 
 **Figure: AI Search Flow**
 
@@ -154,18 +152,33 @@ flowchart TD
 
 **Flow at a glance**
 
-1. **Input sanitization** (reject illegal chars, HTML-escape)
-2. **Pre-filter extraction** → picks out brand/model/price/onSale and hands off leftover text
-3. **GPT-4 intent parse** → translates leftover to fuzzy `FilterCriteria`
-4. **Merge & sanitize** → deterministic > fuzzy; drop numeric filters if query has no digits
-5. **Normalize** → tidy up brands, gender, keywords
+1. **Sanitize input** (reject illegal chars, HTML-escape)
+2. **Pre-filter extraction** → deterministic filters (brand, price, onSale) + leftover text
+3. **GPT-4 intent parse** → fuzzy `FilterCriteria` from leftover
+4. **Merge & sanitize** → deterministic > fuzzy; **numeric-filter reset** if no digits
+5. **Normalize** → standardize brands, gender, keywords
 6. **Branch**
 
-    * **`sortBy` set** → direct DB query with sorting
-    * **else** → semantic vector search fallback (embed + cosine + paginate)
+    * **`sortBy` set** → direct DB query & sort
+    * **else** → semantic **vector search** fallback (embed + cosine + paginate)
 7. **Return** a paged result set
 
-**Example request**
+**AI Search Terminology**
+
+> **Heuristic vs. AI Trust**
+> Simple rule-based heuristics (e.g. strip digits for price hints) act as a safety net; we **only** apply numeric 
+> filters if the AI’s parsed JSON explicitly sets them.
+
+> **Numeric-Filter Reset**
+> If the raw query has **no digits**, we clear all numeric filters (`priceSaleMin/Max`, `priceOriginalMin/Max`) 
+> to avoid unintended constraints.
+
+> **Deterministic vs. Fuzzy**
+> Deterministic filters (brand, on-sale, sort keywords) are extracted by 
+> pattern; everything **left over** (model names, color words) is handled via GPT-4 fuzzy parsing.
+
+
+#### Example Request
 
 ```http
 GET /api/v1/fact-product-shoes/search?
@@ -174,7 +187,7 @@ GET /api/v1/fact-product-shoes/search?
     size=15
 ```
 
-**Key error**
+#### Key Error
 
 * **400 Bad Request** if `q` contains disallowed characters or fails the whitelist.
 
