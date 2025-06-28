@@ -121,86 +121,51 @@ SELECT count(*)
 
 ---
 
+
 ### 2. AI-Powered Search
 
-**`GET /api/v1/fact-product-shoes/search?q={naturalLanguage}&page={n}&size={m}`**
+**Endpoint**
 
-Performs a natural-language search by combining:
-
-1. **Pre-Filter Extraction** (`PreFilterExtractorUtils`)
-   • Pulls out any “deterministic” filters (brand, model, gender, price ranges, onSale flag, title/subtitle keywords) from the raw query
-   • Returns a “leftover” string for fuzzy intent parsing
-
-2. **Intent Parsing** (`OpenAiIntentParserService`)
-   • Sends the leftover text to GPT-4 with a prompt template
-   • Maps the JSON response into a secondary `FilterCriteria` (fuzzy criteria)
-
-3. **Merge Criteria**
-   • Deterministic fields (model, numeric ranges) from pre-extraction take precedence; title keywords from fuzzy parsing overwrite base keywords
-
-4. **Numeric-Filter Reset**
-   *If the original NL query contains **no digits**, all numeric filters (`priceSale{Min,Max}`, `priceOriginal{Min,Max}`) are cleared to avoid unintended price constraints.*
-
-5. **Normalize** (`FilterCriteriaNormalizer`)
-   • Cleans up brand names, maps gender synonyms (e.g. “women” → `female`), pushes age groups into subtitle keywords, etc.
-
-6. **Build JPA Specification**
-
-   ```java
-   Specification<FactProductShoes> spec = ProductShoesSpecifications.byFilters(
-       brand, model, gender,
-       priceSaleMin, priceSaleMax,
-       priceOriginalMin, priceOriginalMax,
-       onSale, titleKeywords, subtitleKeywords,
-       sortBy
-   );
-   ```
-
-7. **Execute Query & Ranking**
-
-  * **If** `sortBy=price_asc|price_desc`
-    → Delegate directly to the database (`shoeRepo.findAll(spec, pageable)`) for SQL sorting
-  * **Else**
-
-    1. Fetch all matching rows in memory
-    2. Generate an embedding for the full NL query (`text-embedding-ada-002`)
-    3. Retrieve stored embeddings from `EMBEDDING_FACT_PRODUCT_SHOES`
-    4. Compute cosine similarity, sort descending
-    5. Return the requested page using `FactProductShoesPaginateUtil.paginateByVectorScore(...)`
-
----
-
-#### Example SQL
-
-**Filtered Fetch (DB sort or no vector fallback)**
-
-```sql
-SELECT f.*
-  FROM fact_product_shoes f
- WHERE /* dynamic filters from Specification */
- ORDER BY /* price_sale ASC|DESC if requested */
- LIMIT :size OFFSET :offset;
+```
+GET /api/v1/fact-product-shoes/search
+  ? q={naturalLanguage}
+  & page={n}
+  & size={m}
 ```
 
-**Vector Ranking (in-memory fallback)**
 
-```sql
--- Retrieve top N by cosine similarity
-SELECT f.*, e.embedding::VARCHAR AS embedding_json
-  FROM fact_product_shoes f
-  JOIN embedding_fact_product_shoes e
-    ON f.id = e.id
- WHERE f.id IN (/* list of filtered IDs */)
- ORDER BY VECTOR_COSINE_SIMILARITY(
-    VECTOR_PARSE(e.embedding),
-    VECTOR_PARSE(PARSE_JSON(:queryEmbeddingJson))
-  ) DESC
- LIMIT :size OFFSET :offset;
+**Figure: AI Search Flow**
+
+```mermaid
+flowchart TD
+    A["Client HTTP GET /search?q=(NL)&page=(n)&size=(m)"]
+        --> B["Sanitize & Validate (Controller)"]
+    B --> C["Extract deterministic filters\n& leftover text"]
+    C --> D["Base FilterCriteria"]
+    C --> E["Leftover Text"]
+    E --> F["GPT-4 Intent Parsing → Fuzzy Criteria"]
+    D & F --> G["Merge + Clear numeric filters if none"]
+    G --> H["Normalize Criteria"]
+    H --> I{"sortBy = price_asc/desc?"}
+    I -- Yes --> J["SQL Fetch & Sort\ndb.findAll(spec, pageable)"]
+    I -- No  --> K["Vector Search:\n• Fetch capped rows\n• Embed query\n• Load embeddings\n• Cosine-sort\n• Paginate"]
+    J & K --> L["Return Page<FactProductShoes>"]
 ```
 
----
+**Flow at a glance**
 
-#### Example Request & Response
+1. **Input sanitization** (reject illegal chars, HTML-escape)
+2. **Pre-filter extraction** → picks out brand/model/price/onSale and hands off leftover text
+3. **GPT-4 intent parse** → translates leftover to fuzzy `FilterCriteria`
+4. **Merge & sanitize** → deterministic > fuzzy; drop numeric filters if query has no digits
+5. **Normalize** → tidy up brands, gender, keywords
+6. **Branch**
+
+    * **`sortBy` set** → direct DB query with sorting
+    * **else** → semantic vector search fallback (embed + cosine + paginate)
+7. **Return** a paged result set
+
+**Example request**
 
 ```http
 GET /api/v1/fact-product-shoes/search?
@@ -209,55 +174,9 @@ GET /api/v1/fact-product-shoes/search?
     size=15
 ```
 
-```json
-{
-  "content": [
-    {
-      "id": "GX9162",
-      "dwid": "20250610",
-      "brand": "adidas",
-      "year": 2025,
-      "month": 6,
-      "day": 10,
-      "title": "Ultraboost 22 Shoes",
-      "subtitle": "Women Running",
-      "url": "https://www.adidas.com.ph/.../GX9162.html",
-      "image": "https://assets.adidas.com/.../ultraboost-22-shoes.jpg",
-      "priceSale": 6000.0,
-      "priceOriginal": 10000.0,
-      "gender": "female",
-      "ageGroup": "adult"
-    },
-    {
-      "id": "GX5591",
-      "dwid": "20250610",
-      "brand": "adidas",
-      "year": 2025,
-      "month": 6,
-      "day": 10,
-      "title": "ULTRABOOST 22 SHOES",
-      "subtitle": "Women Running",
-      "url": "https://www.adidas.com.ph/.../GX5591.html",
-      "image": "https://assets.adidas.com/.../ultraboost-22-shoes.jpg",
-      "priceSale": 6000.0,
-      "priceOriginal": 10000.0,
-      "gender": "female",
-      "ageGroup": "adult"
-    }
-  ],
-  "pageable": { /* pagination metadata */ },
-  "totalPages": 1,
-  "totalElements": 2,
-  "first": true,
-  "last": true,
-  "numberOfElements": 2
-}
-```
+**Key error**
 
-
-### Error Handling
-
-* **400 Bad Request** if the `q` parameter contains invalid characters or fails whitelist.
+* **400 Bad Request** if `q` contains disallowed characters or fails the whitelist.
 
 ---
 
