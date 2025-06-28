@@ -11,3 +11,6 @@ ai:
       temperature: 0
       stop:
         - "\n\n"
+
+ai-search:
+  vector-enabled: true

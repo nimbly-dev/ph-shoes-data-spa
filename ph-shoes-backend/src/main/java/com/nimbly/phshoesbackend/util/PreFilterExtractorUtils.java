@@ -18,25 +18,29 @@ public class PreFilterExtractorUtils {
 
     public FilterCriteria extract(String q) {
         String lower = q.toLowerCase();
-        FilterCriteria c = new FilterCriteria();
+        FilterCriteria filterCriteria = new FilterCriteria();
 
         // brand
-        for (String b : BRANDS) if (lower.contains(b)) { c.setBrand(b); break; }
+        for (String b : BRANDS) if (lower.contains(b)) { filterCriteria.setBrand(b); break; }
 
         // onSale
-        c.setOnSale(lower.contains("on sale"));
+        filterCriteria.setOnSale(lower.contains("on sale"));
 
         // priceSaleMax / priceSaleMin
-        Matcher m = UNDER.matcher(lower);
-        if (m.find()) c.setPriceSaleMax(Double.valueOf(m.group(1)));
-        m = OVER.matcher(lower);
-        if (m.find()) c.setPriceSaleMin(Double.valueOf(m.group(1)));
+        Matcher matcher = UNDER.matcher(lower);
+        if (matcher.find()) filterCriteria.setPriceSaleMax(Double.valueOf(matcher.group(1)));
+        matcher = OVER.matcher(lower);
+        if (matcher.find()) filterCriteria.setPriceSaleMin(Double.valueOf(matcher.group(1)));
 
         // sortBy
-        if (lower.matches(".*\\b(cheapest|lowest)\\b.*"))        c.setSortBy("price_asc");
-        else if (lower.matches(".*\\b(most expensive|highest price)\\b.*")) c.setSortBy("price_desc");
+        if (lower.matches(".*\\b(cheapest|lowest)\\b.*"))        filterCriteria.setSortBy("price_asc");
+        else if (lower.matches(".*\\b(most expensive|highest price)\\b.*")) filterCriteria.setSortBy("price_desc");
 
-        return c;
+        return filterCriteria;
+    }
+
+    public boolean isKnownBrand(String brand) {
+        return brand != null && BRANDS.contains(brand.toLowerCase());
     }
 
     public String strip(String q) {

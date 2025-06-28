@@ -1,6 +1,5 @@
 package com.nimbly.phshoesbackend.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbly.phshoesbackend.configs.OpenAiPromptConfig;
 import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
 import com.nimbly.phshoesbackend.service.OpenAiIntentParserService;
@@ -16,14 +15,12 @@ import java.util.List;
 public class OpenAiIntentParserServiceImpl implements OpenAiIntentParserService {
 
     private final OpenAIClient client;
-    private final ObjectMapper objectMapper;
     private final OpenAiPromptConfig promptConfig;
 
     public OpenAiIntentParserServiceImpl(
             OpenAiPromptConfig promptConfig
     ) {
         this.client = OpenAIOkHttpClient.fromEnv();
-        this.objectMapper = new ObjectMapper();
         this.promptConfig = promptConfig;
     }
 

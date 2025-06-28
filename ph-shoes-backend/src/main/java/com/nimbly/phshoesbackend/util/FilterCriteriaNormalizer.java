@@ -1,11 +1,10 @@
 package com.nimbly.phshoesbackend.util;
 
 import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-@Component
+
 public class FilterCriteriaNormalizer {
 
     /**

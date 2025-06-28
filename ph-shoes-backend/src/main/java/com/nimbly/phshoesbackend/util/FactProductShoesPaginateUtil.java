@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbly.phshoesbackend.model.EmbeddingFactProductShoes;
 import com.nimbly.phshoesbackend.model.FactProductShoes;
 import com.nimbly.phshoesbackend.repository.EmbeddingFactProductShoesRepository;
-import com.nimbly.phshoesbackend.service.OpenAiEmbeddingService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -37,9 +36,8 @@ public class FactProductShoesPaginateUtil {
 
     public Page<FactProductShoes> paginateByVectorScore(
             List<FactProductShoes> filtered,
-            String nlQuery,
+            float[] queryVec,
             Pageable pageable,
-            OpenAiEmbeddingService embeddingService,
             EmbeddingFactProductShoesRepository embeddingRepo
     ) {
         List<String> ids = filtered.stream()
@@ -48,14 +46,14 @@ public class FactProductShoesPaginateUtil {
 
         List<EmbeddingFactProductShoes> rows = embeddingRepo.findByIdIn(ids);
         Map<String, String> idToJson = rows.stream()
-                .collect(Collectors.toMap(EmbeddingFactProductShoes::getId, EmbeddingFactProductShoes::getEmbedding));
-
-        float[] queryVec = embeddingService.embed(nlQuery);
+                .collect(Collectors.toMap(
+                        EmbeddingFactProductShoes::getId,
+                        EmbeddingFactProductShoes::getEmbedding
+                ));
 
         List<ScoredShoe> scored = new ArrayList<>(filtered.size());
         for (FactProductShoes shoe : filtered) {
-            String id = shoe.getKey().getId();
-            float[] productVec = parseJsonToFloatArray(idToJson.get(id));
+            float[] productVec = parseJsonToFloatArray(idToJson.get(shoe.getKey().getId()));
             double score = cosineSimilarity(queryVec, productVec);
             scored.add(new ScoredShoe(shoe, score));
         }
