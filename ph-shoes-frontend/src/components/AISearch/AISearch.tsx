@@ -42,7 +42,7 @@ export const AISearch: React.FC<AISearchProps> = ({
         size="small"
         fullWidth
         sx={{
-          maxWidth: { xs: '100%', sm: 300 },
+          maxWidth: { xs: '100%', sm: 400 },
         }}
       />
 
