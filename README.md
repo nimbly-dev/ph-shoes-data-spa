@@ -140,15 +140,15 @@ GET /api/v1/fact-product-shoes/search
 flowchart TD
     A["Client HTTP GET /search?q=(NL)&page=(n)&size=(m)"]
         --> B["Sanitize & Validate (Controller)"]
-    B --> C["Extract deterministic filters\n& leftover text"]
+    B --> C["Extract deterministic filters & leftover text"]
     C --> D["Base FilterCriteria"]
     C --> E["Leftover Text"]
     E --> F["GPT-4 Intent Parsing → Fuzzy Criteria"]
     D & F --> G["Merge + Clear numeric filters if none"]
     G --> H["Normalize Criteria"]
     H --> I{"sortBy = price_asc/desc?"}
-    I -- Yes --> J["SQL Fetch & Sort\ndb.findAll(spec, pageable)"]
-    I -- No  --> K["Vector Search:\n• Fetch capped rows\n• Embed query\n• Load embeddings\n• Cosine-sort\n• Paginate"]
+    I -- Yes --> J["SQL Fetch & Sortdb.findAll(spec, pageable)"]
+    I -- No  --> K["Vector Search:• Fetch capped rows• Embed query• Load embeddings• Cosine-sort• Paginate"]
     J & K --> L["Return Page<FactProductShoes>"]
 ```
 
