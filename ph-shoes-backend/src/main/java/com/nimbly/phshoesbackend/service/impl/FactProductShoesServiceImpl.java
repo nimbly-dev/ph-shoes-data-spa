@@ -20,8 +20,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -155,9 +157,27 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
     }
 
     private FilterCriteria merge(FilterCriteria base, FilterCriteria fuzzy) {
-        // deterministic fields win
-        if (fuzzy.getModel() != null) base.setModel(fuzzy.getModel());
-        base.setTitleKeywords(fuzzy.getTitleKeywords());
+        // override any non-null scalar fields
+        Optional.ofNullable(fuzzy.getBrand())          .ifPresent(base::setBrand);
+        Optional.ofNullable(fuzzy.getModel())          .ifPresent(base::setModel);
+        Optional.ofNullable(fuzzy.getGender())         .ifPresent(base::setGender);
+        Optional.ofNullable(fuzzy.getPriceSaleMin())   .ifPresent(base::setPriceSaleMin);
+        Optional.ofNullable(fuzzy.getPriceSaleMax())   .ifPresent(base::setPriceSaleMax);
+        Optional.ofNullable(fuzzy.getPriceOriginalMin()).ifPresent(base::setPriceOriginalMin);
+        Optional.ofNullable(fuzzy.getPriceOriginalMax()).ifPresent(base::setPriceOriginalMax);
+
+        // boolean field
+        base.setOnSale(fuzzy.getOnSale());
+
+        // copy over ANY keyword filters
+        base.setTitleKeywords   (fuzzy.getTitleKeywords());
+        base.setSubtitleKeywords(fuzzy.getSubtitleKeywords());
+
+        // preserve AI‐inferred sort if provided
+        if (StringUtils.hasText(fuzzy.getSortBy())) {
+            base.setSortBy(fuzzy.getSortBy());
+        }
+
         return base;
     }
 
