@@ -1,6 +1,6 @@
 // src/components/LatestDataPopover/LatestDataPopover.tsx
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Popover,
   List,
@@ -10,57 +10,42 @@ import {
   Divider,
   CircularProgress,
   Typography,
+  Box,
 } from '@mui/material';
-import axios from 'axios';
-import { fetchLatestShoeData, LatestData } from '../../services/shoeService';
+import { LatestData } from '../../types/LatestData';
 
 
 interface Props {
   anchorEl: HTMLElement | null;
   onClose: () => void;
+  data: LatestData[] | null;
 }
 
-export const LatestDataPopover: React.FC<Props> = ({ anchorEl, onClose }) => {
+export const LatestDataPopover: React.FC<Props> = ({
+  anchorEl,
+  onClose,
+  data,
+}) => {
   const open = Boolean(anchorEl);
-  const [data, setData]       = useState<LatestData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string>();
-
-  useEffect(() => {
-    if (!open) return;
-
-    setLoading(true);
-    setError(undefined);
-
-    fetchLatestShoeData()
-      .then(setData)
-      .catch(e => setError(e.message || 'Failed to load'))
-      .finally(() => setLoading(false));
-  }, [open]);
 
   return (
     <Popover
       open={open}
       anchorEl={anchorEl}
       onClose={onClose}
-      disableScrollLock       // let the page scroll normally
+      disableScrollLock
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      transformOrigin={{ vertical: 'top',    horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       PaperProps={{
-        sx: {
-          width: 240,
-          maxHeight: 300,
-          overflowY: 'auto',  // scroll inside popover
-          p: 0,
-        },
+        sx: { width: 240, maxHeight: 300, overflowY: 'auto', p: 0 },
       }}
     >
-      {loading ? (
-        <CircularProgress sx={{ m: 2 }} />
-      ) : error ? (
-        <Typography color="error" sx={{ m: 2 }}>
-          {error}
-        </Typography>
+      {data == null ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+          <CircularProgress />
+        </Box>
+      ) : data.length === 0 ? (
+        <Typography sx={{ m: 2 }}>No data available</Typography>
       ) : (
         <List dense disablePadding>
           {data.map(({ brand, latestDate }) => (

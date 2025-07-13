@@ -15,7 +15,7 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { Brightness4, Brightness7, FilterList } from '@mui/icons-material';
-import DataUsageIcon from '@mui/icons-material/DataUsage';
+import DataUsageIcon from '@mui/icons-material/DataUsage'
 
 import { ColorModeContext } from './themes/ThemeContext';
 import { AISearch } from './components/AISearch/AISearch';
@@ -23,21 +23,27 @@ import { FilterControls } from './components/FilterControls/FilterControls';
 import { ProductShoeList } from './components/ProductShoeList/ProductShoeList';
 import { LatestDataPopover } from './components/Toggles/LatestDataPopover';
 import { UIProductFilters } from './types/UIProductFilters';
+import { fetchLatestShoeData } from './services/shoeService';
+import { LatestData } from './types/LatestData';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
   const theme               = useTheme();
   const isMobile            = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // ---- paging logic ----
   const pageSize = isMobile ? 8 : 15;
   const [page, setPage] = useState(0);
   useEffect(() => {
-    // whenever pageSize flips (e.g. rotate / resize), reset to first page
     setPage(0);
   }, [pageSize]);
 
-  // ---- default filters: brand + date range (yesterday → today) ----
+  const [latestData, setLatestData] = useState<LatestData[] | null>(null);
+  useEffect(() => {
+    fetchLatestShoeData()
+      .then(setLatestData)
+      .catch(console.error);
+  }, []);
+
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -64,7 +70,6 @@ export default function App() {
   const hideFixedToggles                = isMobile && drawerOpen;
   const [latestAnchor, setLatestAnchor] = useState<HTMLElement | null>(null);
 
-  // ---- handlers ----
   const handleModeToggle = (
     _: React.MouseEvent<HTMLElement>,
     nextMode: 'ai' | 'manual' | null
@@ -142,6 +147,7 @@ export default function App() {
           <LatestDataPopover
             anchorEl={latestAnchor}
             onClose={() => setLatestAnchor(null)}
+            data={latestData}
           />
         </Box>
       )}

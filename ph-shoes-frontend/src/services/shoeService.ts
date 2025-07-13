@@ -5,6 +5,7 @@ import { ProductShoe } from '../types/ProductShoe';
 import { Page } from '../types/Page';
 import { ProductSearchFilter } from '../types/ProductSearchFilter';
 import { UIProductFilters } from '../types/UIProductFilters';
+import { LatestData } from '../types/LatestData';
 
 const AI_QUERY_REGEX = /^[A-Za-z0-9\s!"#$%&'()*+,\-.\/:;<=>?@[\\\]^_`{|}~]+$/;
 const client: AxiosInstance = axios.create({
@@ -13,10 +14,6 @@ const client: AxiosInstance = axios.create({
   // timeout: 20000,
 });
 
-export interface LatestData {
-  brand: string;
-  latestDate: string;
-}
 
 export interface AiPageResponse {
   filter: ProductSearchFilter;   // The AI‐computed filter
