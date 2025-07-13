@@ -1,11 +1,10 @@
 package com.nimbly.phshoesbackend.repository;
 
+
 import com.nimbly.phshoesbackend.model.FactProductShoes;
 import com.nimbly.phshoesbackend.model.FactProductShoesId;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -13,26 +12,15 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/*
-    Uses JpaSpecificationExecutor for dynamic WHERE clauses via the Specification pattern
- */
 @Repository
 public interface FactProductShoesRepository
         extends JpaRepository<FactProductShoes, FactProductShoesId>,
-                JpaSpecificationExecutor<FactProductShoes> {
+        JpaSpecificationExecutor<FactProductShoes> {
 
     @Query(value = "SELECT * FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES", nativeQuery = true)
     List<Map<String,Object>> rawAll();
 
-
-
-
-    /**
-     * Full-catalog vector search.
-     * We quote every alias in lower-case so Snowflake’s JDBC metadata
-     * Use Snowflake built-in Vector Search VECTOR_COSINE_SIMILARITY() function
-     * returns labels like “dwid”, “age_group”, etc., which Hibernate will match as snowflake columns are always UPPERCASE.
-     */
+    // --- vector searches against the full catalog ---
     @Query(value = """
         SELECT
           f.ID             AS "id",
@@ -65,7 +53,6 @@ public interface FactProductShoesRepository
             @Param("queryEmbeddingJson") String queryEmbeddingJson,
             Pageable pageable
     );
-
 
     @Query(value = """
         SELECT
@@ -101,7 +88,6 @@ public interface FactProductShoesRepository
             Pageable pageable
     );
 
-
     @Query(value = """
         SELECT COUNT(DISTINCT ID)
           FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES
@@ -123,19 +109,17 @@ public interface FactProductShoesRepository
     }
 
     @Query(value = """
-    SELECT
-      BRAND                    AS brand,
-      MAX(
-        TO_DATE(
-          CONCAT(
-            YEAR, '-', LPAD(MONTH,2,'0'), '-', LPAD(DAY,2,'0')
-          ),
-          'YYYY-MM-DD'
-        )
-      )                          AS latestDate
-    FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES
-    WHERE BRAND IS NOT NULL
-    GROUP BY BRAND
-    """, nativeQuery = true)
+      SELECT
+        BRAND                    AS brand,
+        MAX(
+          TO_DATE(
+            CONCAT(YEAR,'-',LPAD(MONTH,2,'0'),'-',LPAD(DAY,2,'0')),
+            'YYYY-MM-DD'
+          )
+        ) AS latestDate
+      FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES
+      WHERE BRAND IS NOT NULL
+      GROUP BY BRAND
+      """, nativeQuery = true)
     List<LatestData> findLatestDatePerBrand();
 }

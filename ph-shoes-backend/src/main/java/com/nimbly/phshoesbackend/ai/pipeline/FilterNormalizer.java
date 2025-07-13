@@ -1,11 +1,13 @@
-package com.nimbly.phshoesbackend.util;
+package com.nimbly.phshoesbackend.ai.pipeline;
 
 import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FilterCriteriaNormalizer {
+@Component
+public class FilterNormalizer {
 
     /**
      * Apply all trivial, deterministic normalizations to a FilterCriteria:
