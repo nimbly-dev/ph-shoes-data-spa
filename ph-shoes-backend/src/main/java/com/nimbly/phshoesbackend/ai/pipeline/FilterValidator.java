@@ -1,7 +1,7 @@
 package com.nimbly.phshoesbackend.ai.pipeline;
 
 import com.nimbly.phshoesbackend.exception.AiSearchException;
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +19,15 @@ public class FilterValidator {
     ) {
         this.preExtractor = preExtractor;
     }
-    public void validate(FilterCriteria c) {
-        if (c.getBrand() != null && !preExtractor.isKnownBrand(c.getBrand())) {
-            log.warn("Unknown brand: {}" , c.getBrand());
-            throw new AiSearchException("Unknown brand: " + c.getBrand(), null);
+    public void validate(AISearchFilterCriteria c) {
+        List<String> brands = c.getBrands();
+        if (brands != null) {
+            for (String b : brands) {
+                if (!preExtractor.isKnownBrand(b)) {
+                    log.warn("Unknown brand in list: {}", b);
+                    throw new AiSearchException("Unknown brand: " + b, null);
+                }
+            }
         }
         if (c.getPriceSaleMin() != null && c.getPriceSaleMin() < 0 ||
                 c.getPriceSaleMax() != null && c.getPriceSaleMax() < 0) {

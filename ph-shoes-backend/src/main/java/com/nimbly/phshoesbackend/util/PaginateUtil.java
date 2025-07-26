@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbly.phshoesbackend.model.FactProductShoes;
 import com.nimbly.phshoesbackend.model.EmbeddingFactProductShoes;
-import com.nimbly.phshoesbackend.repository.EmbeddingFactProductShoesRepository;
+import com.nimbly.phshoesbackend.repository.jpa.EmbeddingFactProductShoesRepository;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Component;
 

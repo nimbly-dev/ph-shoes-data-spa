@@ -1,10 +1,12 @@
 package com.nimbly.phshoesbackend.ai.pipeline;
 
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 import com.nimbly.phshoesbackend.service.OpenAiIntentParserService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -26,13 +28,13 @@ public class FilterPipeline {
         this.validator  = validator;
     }
 
-    public FilterCriteria process(String nlQuery) {
+    public AISearchFilterCriteria process(String nlQuery) {
         // 1. deterministic extract
-        FilterCriteria base = pre.extract(nlQuery);
+        AISearchFilterCriteria base = pre.extract(nlQuery);
 
         // 2. strip & fuzzy parse
         String leftover = pre.strip(nlQuery);
-        FilterCriteria fuzzy = intent.parseIntent(leftover);
+        AISearchFilterCriteria fuzzy = intent.parseIntent(leftover);
 
         // 3. merge base + fuzzy
         merge(base, fuzzy);
@@ -44,26 +46,44 @@ public class FilterPipeline {
         return base;
     }
 
-    private void merge(FilterCriteria base, FilterCriteria fuzzy) {
-        // override any non-null scalar fields
-        Optional.ofNullable(fuzzy.getBrand())          .ifPresent(base::setBrand);
-        Optional.ofNullable(fuzzy.getModel())          .ifPresent(base::setModel);
-        Optional.ofNullable(fuzzy.getGender())         .ifPresent(base::setGender);
-        Optional.ofNullable(fuzzy.getPriceSaleMin())   .ifPresent(base::setPriceSaleMin);
-        Optional.ofNullable(fuzzy.getPriceSaleMax())   .ifPresent(base::setPriceSaleMax);
-        Optional.ofNullable(fuzzy.getPriceOriginalMin()).ifPresent(base::setPriceOriginalMin);
-        Optional.ofNullable(fuzzy.getPriceOriginalMax()).ifPresent(base::setPriceOriginalMax);
+    private void merge(AISearchFilterCriteria base, AISearchFilterCriteria fuzzy) {
+        //  OR-clause for any brands AI detected
+        if (fuzzy.getBrands() != null && !fuzzy.getBrands().isEmpty()) {
+            base.setBrands(new ArrayList<>(fuzzy.getBrands()));
+        }
 
-        // boolean field
+        // Scalar overrides
+        Optional.ofNullable(fuzzy.getGender())           .ifPresent(base::setGender);
+        Optional.ofNullable(fuzzy.getPriceSaleMin())     .ifPresent(base::setPriceSaleMin);
+        Optional.ofNullable(fuzzy.getPriceSaleMax())     .ifPresent(base::setPriceSaleMax);
+        Optional.ofNullable(fuzzy.getPriceOriginalMin()) .ifPresent(base::setPriceOriginalMin);
+        Optional.ofNullable(fuzzy.getPriceOriginalMax()) .ifPresent(base::setPriceOriginalMax);
         base.setOnSale(fuzzy.getOnSale());
 
-        // copy over ANY keyword filters
-        base.setTitleKeywords   (fuzzy.getTitleKeywords());
-        base.setSubtitleKeywords(fuzzy.getSubtitleKeywords());
-
-        // preserve AI‐inferred sort if provided
-        if (StringUtils.hasText(fuzzy.getSortBy())) {
-            base.setSortBy(fuzzy.getSortBy());
+        //  Price-sort shortcut: if AI wants a price sort, clear everything else
+        String aiSort = fuzzy.getSortBy();
+        if (StringUtils.hasText(aiSort)) {
+            base.setSortBy(aiSort);
+            base.setBrands(List.of());
+            base.setModel(null);
+            base.setTitleKeywords(List.of());
+            base.setSubtitleKeywords(List.of());
+            return;
         }
+
+        // Carry over the raw model for phrase matching
+        base.setModel(fuzzy.getModel());
+
+        // Merge any free-form title keywords
+        List<String> titleKeywords = new ArrayList<>();
+        if (base.getTitleKeywords()   != null) titleKeywords.addAll(base.getTitleKeywords());
+        if (fuzzy.getTitleKeywords()  != null) titleKeywords.addAll(fuzzy.getTitleKeywords());
+        base.setTitleKeywords(titleKeywords);
+
+        // Drop subtitle filters—let vector search or explicit UI handle categories
+        base.setSubtitleKeywords(List.of());
     }
+
+
+
 }

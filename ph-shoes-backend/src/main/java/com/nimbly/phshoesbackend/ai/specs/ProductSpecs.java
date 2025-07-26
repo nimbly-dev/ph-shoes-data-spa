@@ -1,12 +1,58 @@
 package com.nimbly.phshoesbackend.ai.specs;
 
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProductSpecs {
+
+    public static Specification<FactProductShoes> brandIn(List<String> brands) {
+        List<String> lower = brands.stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+        return (root, query, cb) ->
+                root.get("brand").as(String.class)
+                        .in(lower);
+    }
+
+    public static Specification<FactProductShoes> titleMatchesPhrase(String phrase) {
+        // inserts a % wildcard between each word
+        String pattern = "%" + phrase.toLowerCase().trim().replaceAll("\\s+", "%") + "%";
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("title")), pattern);
+    }
+
+    public static Specification<FactProductShoes> latestOnly() {
+        return (root, query, criteriaBuilder) -> {
+            // Subquery returning the greatest dwid for this product.id
+            Subquery<String> subquery = query.subquery(String.class);
+            Root<FactProductShoes> subRoot = subquery.from(FactProductShoes.class);
+
+            // Extract the dwid path as String
+            Expression<String> dwidExpr = subRoot
+                    .get("key")
+                    .get("dwid")
+                    .as(String.class);
+
+            subquery.select(criteriaBuilder.greatest(dwidExpr))
+                    .where(criteriaBuilder.equal(
+                            subRoot.get("key").get("id"),
+                            root.get("key").get("id")
+                    ));
+
+            // root.dwid == that greatest dwid
+            return criteriaBuilder.equal(
+                    root.get("key").get("dwid").as(String.class),
+                    subquery
+            );
+        };
+    }
 
     public static Specification<FactProductShoes> brandEquals(String brand) {
         return (root, query, cb) ->

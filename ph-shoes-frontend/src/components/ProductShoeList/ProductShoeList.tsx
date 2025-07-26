@@ -1,16 +1,15 @@
-// src/components/ProductShoeList/ProductShoeList.tsx
-
 import React from 'react';
 import { Box, Pagination, CircularProgress, Typography } from '@mui/material';
-import { useShoesByAI } from '../../hooks/useShoesAI';
 import { useShoesByFilter, UseShoesByFilterResult } from '../../hooks/useShoesByFilter';
 import { ProductShoeItem } from './ProductShoeItem';
 import { ProductShoe } from '../../types/ProductShoe';
 import { UIProductFilters } from '../../types/UIProductFilters';
+import { useShoesByAI } from '../../hooks/useShoesAI';
 
 interface Props {
   aiQuery: string;
   manualFilters: UIProductFilters;
+  useVector: boolean;              // ← new prop
   page: number;
   pageSize: number;
   onPageChange: (newPage: number) => void;
@@ -19,32 +18,32 @@ interface Props {
 export const ProductShoeList: React.FC<Props> = ({
   aiQuery,
   manualFilters,
+  useVector,                     // ← receive here
   page,
   pageSize,
   onPageChange,
 }) => {
-  // 1) AI hook
+  // AI hook now takes useVector, but won't refetch on toggle alone
   const {
     data: aiData,
     loading: loadingAi,
     error: errorAi,
-  } = useShoesByAI(aiQuery, page, pageSize);
+  } = useShoesByAI(aiQuery, page, pageSize, useVector);
 
-  // 2) Manual hook
+  // Manual hook (unchanged)
   const {
     data: manualData,
     loading: loadingManual,
     error: errorManual,
   }: UseShoesByFilterResult = useShoesByFilter(manualFilters, page, pageSize);
 
-  const isAiMode = aiQuery.trim() !== '';
-  const pageData = isAiMode ? aiData : manualData;
-  const loading = isAiMode ? loadingAi : loadingManual;
-  const error = isAiMode ? errorAi : errorManual;
-
-  const contentArray: ProductShoe[] = pageData?.content ?? [];
-  const totalPages = pageData?.totalPages ?? 0;
-  const currentPage = pageData?.number ?? page; 
+  const isAiMode     = aiQuery.trim() !== '';
+  const pageData     = isAiMode ? aiData : manualData;
+  const loading      = isAiMode ? loadingAi : loadingManual;
+  const error        = isAiMode ? errorAi   : errorManual;
+  const contentArray = pageData?.content ?? [];
+  const totalPages   = pageData?.totalPages ?? 0;
+  const currentPage  = pageData?.number     ?? page;
 
   if (loading) {
     return (
@@ -87,14 +86,14 @@ export const ProductShoeList: React.FC<Props> = ({
           justifyContent: 'center',
           justifyItems: 'center',
           gridTemplateColumns: {
-            xs: 'repeat(1, minmax(0, 1fr))',
-            sm: 'repeat(2, minmax(0, 1fr))',
-            md: 'repeat(3, minmax(0, 1fr))',
-            lg: 'repeat(5, minmax(0, 1fr))',
+            xs: 'repeat(1,minmax(0,1fr))',
+            sm: 'repeat(2,minmax(0,1fr))',
+            md: 'repeat(3,minmax(0,1fr))',
+            lg: 'repeat(5,minmax(0,1fr))',
           },
         }}
       >
-        {contentArray.map((shoe: ProductShoe) => (
+        {contentArray.map((shoe) => (
           <ProductShoeItem key={`${shoe.dwid}-${shoe.id}`} shoe={shoe} />
         ))}
       </Box>
@@ -102,7 +101,7 @@ export const ProductShoeList: React.FC<Props> = ({
       <Box display="flex" justifyContent="center" mt={4}>
         <Pagination
           count={totalPages}
-          page={currentPage + 1} 
+          page={currentPage + 1}
           onChange={(_, newPage) => onPageChange(newPage - 1)}
           shape="rounded"
         />

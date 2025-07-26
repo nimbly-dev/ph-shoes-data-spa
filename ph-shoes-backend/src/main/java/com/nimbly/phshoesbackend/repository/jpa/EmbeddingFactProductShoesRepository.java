@@ -1,4 +1,4 @@
-package com.nimbly.phshoesbackend.repository;
+package com.nimbly.phshoesbackend.repository.jpa;
 
 import com.nimbly.phshoesbackend.model.EmbeddingFactProductShoes;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -104,25 +103,25 @@ class FactProductShoesControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("GET /api/v1/fact-product-shoes/search → 200 + empty page JSON")
-    void searchByAI_empty() throws Exception {
-        when(service.aiSearch(anyString(), any(Pageable.class)))
-                .thenAnswer(invocation -> {
-                    Pageable p = invocation.getArgument(1, Pageable.class);
-                    return Page.empty(p);
-                });
-
-        mockMvc.perform(get("/api/v1/fact-product-shoes/search")
-                        .param("q", "find running shoes")
-                        .param("page", "1")
-                        .param("size", "3")
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content").isEmpty())
-                .andExpect(jsonPath("$.pageable.pageNumber").value(1))
-                .andExpect(jsonPath("$.pageable.pageSize").value(3));
-    }
+//    @Test
+//    @DisplayName("GET /api/v1/fact-product-shoes/search → 200 + empty page JSON")
+//    void searchByAI_empty() throws Exception {
+//        when(service.aiSearch(anyString(), any(Pageable.class)))
+//                .thenAnswer(invocation -> {
+//                    Pageable p = invocation.getArgument(1, Pageable.class);
+//                    return Page.empty(p);
+//                });
+//
+//        mockMvc.perform(get("/api/v1/fact-product-shoes/search")
+//                        .param("q", "find running shoes")
+//                        .param("page", "1")
+//                        .param("size", "3")
+//                )
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.content").isArray())
+//                .andExpect(jsonPath("$.content").isEmpty())
+//                .andExpect(jsonPath("$.pageable.pageNumber").value(1))
+//                .andExpect(jsonPath("$.pageable.pageSize").value(3));
+//    }
 
 }

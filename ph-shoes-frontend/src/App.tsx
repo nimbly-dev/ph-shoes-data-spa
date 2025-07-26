@@ -14,7 +14,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { Brightness4, Brightness7, FilterList } from '@mui/icons-material';
+import { Brightness4, Brightness7, FilterList, Settings } from '@mui/icons-material';
 import DataUsageIcon from '@mui/icons-material/DataUsage'
 
 import { ColorModeContext } from './themes/ThemeContext';
@@ -25,6 +25,7 @@ import { LatestDataPopover } from './components/Toggles/LatestDataPopover';
 import { UIProductFilters } from './types/UIProductFilters';
 import { fetchLatestShoeData } from './services/shoeService';
 import { LatestData } from './types/LatestData';
+import { ToggleSettingsModal } from './components/Toggles/ToggleSettingsModal';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
@@ -69,6 +70,10 @@ export default function App() {
   const [drawerOpen, setDrawerOpen]     = useState(false);
   const hideFixedToggles                = isMobile && drawerOpen;
   const [latestAnchor, setLatestAnchor] = useState<HTMLElement | null>(null);
+
+  // ---- search Settings states ----
+  const [settingsOpen, setSettingsOpen]             = useState(false);
+  const [useVectorFallback, setUseVectorFallback]   = useState(true);
 
   const handleModeToggle = (
     _: React.MouseEvent<HTMLElement>,
@@ -138,6 +143,12 @@ export default function App() {
             </IconButton>
           </Tooltip>
 
+          <Tooltip title="Search Settings">
+            <IconButton color="inherit" onClick={() => setSettingsOpen(true)}>
+              <Settings />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
             <IconButton onClick={toggleMode} color="inherit">
               {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
@@ -151,6 +162,14 @@ export default function App() {
           />
         </Box>
       )}
+
+      {/* Settings modal */}
+      <ToggleSettingsModal
+        open={settingsOpen}
+        useVector={useVectorFallback}
+        onChange={setUseVectorFallback}
+        onClose={() => setSettingsOpen(false)}
+      />
 
       <Container maxWidth="lg" sx={{ pt: 4, pb: 4 }}>
         <Typography variant="h3" align="center" gutterBottom>
@@ -253,6 +272,7 @@ export default function App() {
         <ProductShoeList
           aiQuery={aiQuery}
           manualFilters={activeFilters}
+          useVector={useVectorFallback}     // ← add this
           page={page}
           pageSize={pageSize}
           onPageChange={(newPage) => setPage(newPage)}

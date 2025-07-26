@@ -1,7 +1,7 @@
 package com.nimbly.phshoesbackend.ai.specs;
 
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -9,42 +9,51 @@ import java.util.List;
 
 @Component
 public class SpecificationBuilder {
-    public Specification<FactProductShoes> build(FilterCriteria c) {
-        Specification<FactProductShoes> spec = Specification.where(null);
 
-        if (c.getBrand() != null) {
-            spec = spec.and(ProductSpecs.brandEquals(c.getBrand()));
+    public Specification<FactProductShoes> build(AISearchFilterCriteria fc) {
+        Specification<FactProductShoes> spec = (root, query, cb) -> cb.conjunction();
+
+        // --- BRAND(S) filter: use brandIn(...) if any brands were detected ---
+        List<String> brands = fc.getBrands();
+        if (brands != null && !brands.isEmpty()) {
+            spec = spec.and(ProductSpecs.brandIn(brands));
         }
-        if (c.getModel() != null) {
-            spec = spec.and(ProductSpecs.modelEquals(c.getModel()));
+
+        // --- price filters ---
+        if (fc.getPriceSaleMin() != null) {
+            spec = spec.and(ProductSpecs.priceSaleMin(fc.getPriceSaleMin()));
         }
-        if (c.getGender() != null) {
-            spec = spec.and(ProductSpecs.genderEquals(c.getGender()));
+        if (fc.getPriceSaleMax() != null) {
+            spec = spec.and(ProductSpecs.priceSaleMax(fc.getPriceSaleMax()));
         }
-        if (c.getPriceSaleMin() != null) {
-            spec = spec.and(ProductSpecs.priceSaleMin(c.getPriceSaleMin()));
+        if (fc.getPriceOriginalMin() != null) {
+            spec = spec.and(ProductSpecs.priceOriginalMin(fc.getPriceOriginalMin()));
         }
-        if (c.getPriceSaleMax() != null) {
-            spec = spec.and(ProductSpecs.priceSaleMax(c.getPriceSaleMax()));
+        if (fc.getPriceOriginalMax() != null) {
+            spec = spec.and(ProductSpecs.priceOriginalMax(fc.getPriceOriginalMax()));
         }
-        if (c.getPriceOriginalMin() != null) {
-            spec = spec.and(ProductSpecs.priceOriginalMin(c.getPriceOriginalMin()));
-        }
-        if (c.getPriceOriginalMax() != null) {
-            spec = spec.and(ProductSpecs.priceOriginalMax(c.getPriceOriginalMax()));
-        }
-        if (Boolean.TRUE.equals(c.getOnSale())) {
+
+        // --- onSale flag ---
+        if (Boolean.TRUE.equals(fc.getOnSale())) {
             spec = spec.and(ProductSpecs.onSale());
         }
 
-        List<String> titles = c.getTitleKeywords();
-        if (titles != null && !titles.isEmpty()) {
-            spec = spec.and(ProductSpecs.titleContainsAll(titles));
+        // --- title filtering: phrase vs keyword ---
+        if (fc.getModel() != null && !fc.getModel().isBlank()) {
+            spec = spec.and(ProductSpecs.titleMatchesPhrase(fc.getModel()));
+        } else {
+            List<String> keywords = fc.getTitleKeywords();
+            if (keywords != null && !keywords.isEmpty()) {
+                spec = spec.and(ProductSpecs.titleContainsAll(keywords));
+            }
         }
-        List<String> subs = c.getSubtitleKeywords();
-        if (subs != null && !subs.isEmpty()) {
-            spec = spec.and(ProductSpecs.subtitleContainsAll(subs));
-        }
+
+        // --- always only the latest record per product ID ---
+        spec = spec.and(ProductSpecs.latestOnly());
+
+        //TODO: Prices 0's SHOULD be handled by the ETL/Data Collection side, for now all 0's will be excluded.
+        spec = spec.and(ProductSpecs.priceSaleMin(0.01))
+                .and(ProductSpecs.priceOriginalMin(0.01));
 
         return spec;
     }

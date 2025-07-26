@@ -3,9 +3,10 @@ package com.nimbly.phshoesbackend.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import com.nimbly.phshoesbackend.repository.FactProductShoesRepository;
-import com.nimbly.phshoesbackend.repository.specification.ProductShoesSpecifications;
+import com.nimbly.phshoesbackend.repository.jpa.FactProductShoesSpecRepository;
+import com.nimbly.phshoesbackend.repository.jpa.ProductShoesSpecifications;
 import com.nimbly.phshoesbackend.service.FactProductShoesService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/fact-product-shoes")
 public class FactProductShoesController {
@@ -86,6 +88,7 @@ public class FactProductShoesController {
     @GetMapping("/search")
     public Page<FactProductShoes> searchByAI(
             @RequestParam("q") String nlQuery,
+            @RequestParam(defaultValue="true") boolean useVector,
             @PageableDefault(size = 15) Pageable pageable
     ) throws JsonProcessingException {
         // Reject disallowed raw chars
@@ -95,7 +98,7 @@ public class FactProductShoesController {
                     "Search query contains invalid characters."
             );
         }
-
+        log.error("Using vector: " + useVector);
         // Escape any stray HTML
         String escaped = HtmlUtils.htmlEscape(nlQuery);
 
@@ -106,10 +109,10 @@ public class FactProductShoesController {
                     "Search query contains invalid characters."
             );
         }
-        return service.aiSearch(escaped, pageable);
+        return service.aiSearch(escaped, useVector, pageable);
     }
     @GetMapping("/latest")
-    public List<FactProductShoesRepository.LatestData> latestByBrand() {
+    public List<FactProductShoesSpecRepository.LatestData> latestByBrand() {
         return service.getLatestDataByBrand();
     }
 }

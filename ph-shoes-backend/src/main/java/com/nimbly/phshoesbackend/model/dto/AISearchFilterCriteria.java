@@ -9,8 +9,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FilterCriteria {
-    private String brand;
+public class AISearchFilterCriteria {
+    private List<String> brands;
     private String model;
     private Double priceSaleMin;
     private Double priceSaleMax;

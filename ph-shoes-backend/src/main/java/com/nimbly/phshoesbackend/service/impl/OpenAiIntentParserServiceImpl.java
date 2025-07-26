@@ -1,7 +1,7 @@
 package com.nimbly.phshoesbackend.service.impl;
 
 import com.nimbly.phshoesbackend.configs.OpenAiPromptConfig;
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 import com.nimbly.phshoesbackend.service.OpenAiIntentParserService;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -10,6 +10,7 @@ import com.openai.models.chat.completions.StructuredChatCompletionCreateParams;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class OpenAiIntentParserServiceImpl implements OpenAiIntentParserService {
@@ -26,19 +27,19 @@ public class OpenAiIntentParserServiceImpl implements OpenAiIntentParserService 
 
 
     @Override
-    public FilterCriteria parseIntent(String nlQuery) {
+    public AISearchFilterCriteria parseIntent(String nlQuery) {
         String fullPrompt = promptConfig.getPromptFor(nlQuery);
 
-        StructuredChatCompletionCreateParams<FilterCriteria> createParams =
-                StructuredChatCompletionCreateParams.<FilterCriteria>builder()
+        StructuredChatCompletionCreateParams<AISearchFilterCriteria> createParams =
+                StructuredChatCompletionCreateParams.<AISearchFilterCriteria>builder()
                         .model(ChatModel.GPT_4_1_MINI)
                         .maxCompletionTokens(512)
                         .temperature(0.0)
-                        .responseFormat(FilterCriteria.class)
+                        .responseFormat(AISearchFilterCriteria.class)
                         .addUserMessage(fullPrompt)
                         .build();
 
-        List<FilterCriteria> parsedList = client.chat()
+        List<AISearchFilterCriteria> parsedList = client.chat()
                 .completions()
                 .create(createParams)
                 .choices()
@@ -46,11 +47,23 @@ public class OpenAiIntentParserServiceImpl implements OpenAiIntentParserService 
                 .flatMap(choice -> choice.message().content().stream())
                 .toList();
 
-        FilterCriteria parsed = parsedList.isEmpty() ? new FilterCriteria() : parsedList.get(0);
+        // if AI gave nothing, use an empty criteria
+        AISearchFilterCriteria parsed = parsedList.isEmpty()
+                ? new AISearchFilterCriteria()
+                : parsedList.get(0);
 
-        if (parsed.getBrand() != null && parsed.getBrand().isBlank()) {
-            parsed.setBrand(null);
+        // --- normalize brands list: drop any blank entries ---
+        if (parsed.getBrands() != null) {
+            List<String> cleanedBrands = parsed.getBrands().stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .map(s -> s.toLowerCase().replaceAll("[^a-z0-9]+", ""))
+                    .toList();
+            parsed.setBrands(cleanedBrands);
         }
+
+        // --- model, gender, title/subtitle blanks ---
         if (parsed.getModel() != null && parsed.getModel().isBlank()) {
             parsed.setModel(null);
         }
@@ -64,6 +77,7 @@ public class OpenAiIntentParserServiceImpl implements OpenAiIntentParserService 
             parsed.setSubtitleKeywords(null);
         }
 
+        // --- zero‐value price filters ---
         if (parsed.getPriceSaleMin() != null && parsed.getPriceSaleMin() == 0.0) {
             parsed.setPriceSaleMin(null);
         }

@@ -1,12 +1,14 @@
 package com.nimbly.phshoesbackend.ai.pipeline.impl;
 
 import com.nimbly.phshoesbackend.ai.pipeline.PreFilterExtractor;
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class PreFilterExtractorImpl implements PreFilterExtractor {
@@ -17,13 +19,17 @@ public class PreFilterExtractorImpl implements PreFilterExtractor {
     private static final Pattern OVER  = Pattern.compile("\\b(?:over|above)\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 
     @Override
-    public FilterCriteria extract(String q) {
+    public AISearchFilterCriteria extract(String q) {
         String lower = q.toLowerCase();
-        FilterCriteria c = new FilterCriteria();
+        AISearchFilterCriteria c = new AISearchFilterCriteria();
 
-        for (String b : BRANDS) {
-            if (lower.contains(b)) { c.setBrand(b); break; }
+        List<String> found = BRANDS.stream()
+                .filter(b -> lower.contains(b))
+                .collect(Collectors.toList());
+        if (!found.isEmpty()) {
+            c.setBrands(found);
         }
+
         c.setOnSale(lower.contains("on sale"));
 
         Matcher m = UNDER.matcher(lower);

@@ -1,7 +1,7 @@
 package com.nimbly.phshoesbackend.service;
 
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 
 public interface OpenAiIntentParserService {
-    public FilterCriteria parseIntent(String nlQuery);
+    public AISearchFilterCriteria parseIntent(String nlQuery);
 }

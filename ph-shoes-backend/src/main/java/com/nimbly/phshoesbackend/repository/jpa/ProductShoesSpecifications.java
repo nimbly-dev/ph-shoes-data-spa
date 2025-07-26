@@ -1,4 +1,4 @@
-package com.nimbly.phshoesbackend.repository.specification;
+package com.nimbly.phshoesbackend.repository.jpa;
 
 import com.nimbly.phshoesbackend.model.FactProductShoes;
 import jakarta.persistence.criteria.*;

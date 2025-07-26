@@ -3,8 +3,8 @@ package com.nimbly.phshoesbackend.service.impl;
 import com.nimbly.phshoesbackend.ai.orchestrator.SearchOrchestrator;
 import com.nimbly.phshoesbackend.ai.pipeline.FilterPipeline;
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import com.nimbly.phshoesbackend.model.dto.FilterCriteria;
-import com.nimbly.phshoesbackend.repository.FactProductShoesRepository;
+import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
+import com.nimbly.phshoesbackend.repository.jpa.FactProductShoesSpecRepository;
 import com.nimbly.phshoesbackend.service.FactProductShoesService;
 import com.nimbly.phshoesbackend.util.AiRetry;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
 
     private final FilterPipeline pipeline;
     private final SearchOrchestrator orchestrator;
-    private final FactProductShoesRepository shoeRepo;
+    private final FactProductShoesSpecRepository specRepo;
     private final AiRetry aiRetry;
 
     @Value("${ai-search.vector-enabled:true}")
@@ -35,12 +35,12 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
     public FactProductShoesServiceImpl(
             FilterPipeline pipeline,
             SearchOrchestrator orchestrator,
-            FactProductShoesRepository shoeRepo,
+            FactProductShoesSpecRepository specRepo,
             AiRetry aiRetry
     ) {
         this.pipeline     = pipeline;
         this.orchestrator = orchestrator;
-        this.shoeRepo                = shoeRepo;
+        this.specRepo    = specRepo;
         this.aiRetry = aiRetry;
     }
 
@@ -48,21 +48,23 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
     public Page<FactProductShoes> fetchBySpec(Specification<FactProductShoes> spec, Pageable pageable) {
         int    safeSize   = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
         Pageable safePg   = PageRequest.of(pageable.getPageNumber(), safeSize, pageable.getSort());
-        return shoeRepo.findAll(spec, safePg);
+        return specRepo.findAll(spec, safePg);
     }
 
     @Override
-    public List<FactProductShoesRepository.LatestData> getLatestDataByBrand() {
-        return shoeRepo.findLatestDatePerBrand();
+    public List<FactProductShoesSpecRepository.LatestData> getLatestDataByBrand() {
+        return specRepo.findLatestDatePerBrand();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FactProductShoes> aiSearch(String nlQuery, Pageable pg) {
+    public Page<FactProductShoes> aiSearch(String nlQuery,Boolean useVector ,Pageable pg) {
         // build + normalize + validate criteria
-        FilterCriteria criteria = pipeline.process(nlQuery);
+        AISearchFilterCriteria criteria = pipeline.process(nlQuery);
         // run spec-search or vector-fallback
-        return orchestrator.search(nlQuery, criteria, pg);
+        return orchestrator.search(nlQuery, criteria, pg, useVector);
     }
+
+
 
 }

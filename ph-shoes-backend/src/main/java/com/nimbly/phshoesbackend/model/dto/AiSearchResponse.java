@@ -10,6 +10,6 @@ import org.springframework.data.domain.Page;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AiSearchResponse {
-    private FilterCriteria filter;
+    private AISearchFilterCriteria filter;
     private Page<FactProductShoes> results;
 }
