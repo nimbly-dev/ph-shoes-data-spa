@@ -2,14 +2,13 @@ import React from 'react';
 import { Box, Pagination, CircularProgress, Typography } from '@mui/material';
 import { useShoesByFilter, UseShoesByFilterResult } from '../../hooks/useShoesByFilter';
 import { ProductShoeItem } from './ProductShoeItem';
-import { ProductShoe } from '../../types/ProductShoe';
 import { UIProductFilters } from '../../types/UIProductFilters';
 import { useShoesByAI } from '../../hooks/useShoesAI';
 
 interface Props {
   aiQuery: string;
   manualFilters: UIProductFilters;
-  useVector: boolean;              // ← new prop
+  useVector: boolean;
   page: number;
   pageSize: number;
   onPageChange: (newPage: number) => void;
@@ -18,24 +17,16 @@ interface Props {
 export const ProductShoeList: React.FC<Props> = ({
   aiQuery,
   manualFilters,
-  useVector,                     // ← receive here
+  useVector,
   page,
   pageSize,
   onPageChange,
 }) => {
-  // AI hook now takes useVector, but won't refetch on toggle alone
-  const {
-    data: aiData,
-    loading: loadingAi,
-    error: errorAi,
-  } = useShoesByAI(aiQuery, page, pageSize, useVector);
+  const { data: aiData, loading: loadingAi, error: errorAi } =
+    useShoesByAI(aiQuery, page, pageSize, useVector);
 
-  // Manual hook (unchanged)
-  const {
-    data: manualData,
-    loading: loadingManual,
-    error: errorManual,
-  }: UseShoesByFilterResult = useShoesByFilter(manualFilters, page, pageSize);
+  const { data: manualData, loading: loadingManual, error: errorManual }:
+    UseShoesByFilterResult = useShoesByFilter(manualFilters, page, pageSize);
 
   const isAiMode     = aiQuery.trim() !== '';
   const pageData     = isAiMode ? aiData : manualData;
@@ -68,9 +59,7 @@ export const ProductShoeList: React.FC<Props> = ({
     return (
       <Box textAlign="center" my={8}>
         <Typography variant="h6">
-          {isAiMode
-            ? `No AI results found for “${aiQuery}”`
-            : 'No shoes match these filters.'}
+          {isAiMode ? `No AI results found for “${aiQuery}”` : 'No shoes match these filters.'}
         </Typography>
       </Box>
     );
@@ -82,14 +71,12 @@ export const ProductShoeList: React.FC<Props> = ({
         component="section"
         sx={{
           display: 'grid',
-          gap: 4,
-          justifyContent: 'center',
-          justifyItems: 'center',
+          gap: { xs: 2, md: 2.5 },            
+          alignItems: 'stretch',
           gridTemplateColumns: {
-            xs: 'repeat(1,minmax(0,1fr))',
-            sm: 'repeat(2,minmax(0,1fr))',
-            md: 'repeat(3,minmax(0,1fr))',
-            lg: 'repeat(5,minmax(0,1fr))',
+            xs: 'repeat(2, minmax(0, 1fr))',
+            sm: 'repeat(3, minmax(0, 1fr))',
+            md: 'repeat(auto-fill, minmax(220px, 1fr))',
           },
         }}
       >

@@ -73,6 +73,58 @@ public class ProductShoesSpecifications {
                 cb.between(r.get("key").get("dwid"), s, e);
     }
 
+    public static Specification<FactProductShoes> hasAnySize(List<String> sizes) {
+        return (root, query, cb) -> {
+            if (sizes == null || sizes.isEmpty()) {
+                return cb.conjunction();
+            }
+            Expression<String> extra = cb.lower(root.get("extra").as(String.class));
+            List<Predicate> predicates = sizes.stream()
+                    .map(size -> cb.like(extra, "%\"" + size.toLowerCase() + "\"%"))
+                    .toList();
+            return cb.or(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<FactProductShoes> finalPriceGte(Double min) {
+        return (root, query, cb) -> cb.or(
+                cb.and(
+                        cb.lessThan(root.get("priceSale"), root.get("priceOriginal")),
+                        cb.greaterThanOrEqualTo(root.get("priceSale"), min)
+                ),
+                cb.and(
+                        cb.not(cb.lessThan(root.get("priceSale"), root.get("priceOriginal"))),
+                        cb.greaterThanOrEqualTo(root.get("priceOriginal"), min)
+                )
+        );
+    }
+
+    public static Specification<FactProductShoes> finalPriceLte(Double max) {
+        return (root, query, cb) -> cb.or(
+                cb.and(
+                        cb.lessThan(root.get("priceSale"), root.get("priceOriginal")),
+                        cb.lessThanOrEqualTo(root.get("priceSale"), max)
+                ),
+                cb.and(
+                        cb.not(cb.lessThan(root.get("priceSale"), root.get("priceOriginal"))),
+                        cb.lessThanOrEqualTo(root.get("priceOriginal"), max)
+                )
+        );
+    }
+
+    public static Specification<FactProductShoes> finalPriceBetween(Double min, Double max) {
+        return (root, query, cb) -> cb.or(
+                cb.and(
+                        cb.lessThan(root.get("priceSale"), root.get("priceOriginal")),
+                        cb.between(root.get("priceSale"), min, max)
+                ),
+                cb.and(
+                        cb.not(cb.lessThan(root.get("priceSale"), root.get("priceOriginal"))),
+                        cb.between(root.get("priceOriginal"), min, max)
+                )
+        );
+    }
+
     /**
      * Matches title OR subtitle containing the keyword (case‐insensitive).
      * If `keyword` is blank or null, this spec returns “true” (no constraint).

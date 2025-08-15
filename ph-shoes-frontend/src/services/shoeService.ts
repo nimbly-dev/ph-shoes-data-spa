@@ -16,17 +16,39 @@ export async function fetchShoesByFilter(
   page: number,
   size: number
 ): Promise<Page<ProductShoe>> {
-  const params: Record<string, string | number> = {};
-  if (filters.brand)    params.brand = filters.brand;
-  if (filters.gender)   params.gender = filters.gender;
-  if (filters.date) {
-    params.date = filters.date;
-  } else if (filters.startDate && filters.endDate) {
-    params.startDate = filters.startDate;
-    params.endDate   = filters.endDate;
+
+  const params: Record<string, string | number | boolean> = {};
+
+  if (filters.brand?.trim()) {
+    params.brand = filters.brand.trim();
   }
-  if (filters.keyword)   params.keyword = filters.keyword;
-  if (filters.onSale === true) params.onSale = 'true';
+
+  if (filters.gender?.trim()) {
+    params.gender = filters.gender.trim();
+  }
+
+  if (filters.date?.trim()) {
+    params.date = filters.date.trim();
+  } else if (filters.startDate?.trim() && filters.endDate?.trim()) {
+    params.startDate = filters.startDate.trim();
+    params.endDate   = filters.endDate.trim();
+  }
+
+  if (filters.keyword?.trim()) {
+    params.keyword = filters.keyword.trim();
+  }
+
+  if (filters.sizes && filters.sizes.length > 0) {
+    params.sizes = filters.sizes.join(','); // comma-separated
+  }
+
+  if (filters.minPrice != null) params.minPrice = Number(filters.minPrice);
+  if (filters.maxPrice != null) params.maxPrice = Number(filters.maxPrice);
+
+  if (filters.onSale === true) {
+    params.onSale = true; 
+  }
+
   params.page = page;
   params.size = size;
 
@@ -34,8 +56,11 @@ export async function fetchShoesByFilter(
     '/api/v1/fact-product-shoes',
     { params }
   );
+
   return response.data;
 }
+
+
 
 
 export async function fetchShoesAI(

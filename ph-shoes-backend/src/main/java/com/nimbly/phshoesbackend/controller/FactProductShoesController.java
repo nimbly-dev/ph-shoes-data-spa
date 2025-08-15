@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,13 +48,14 @@ public class FactProductShoesController {
             @RequestParam(name = "endDate", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Optional<LocalDate> endDate,
             @RequestParam(name = "keyword", required = false) Optional<String> keyword,
+            @RequestParam(name = "sizes", required = false) Optional<String> sizes, // comma-separated
             @RequestParam(name = "onSale", defaultValue = "false") boolean onSale,
+            @RequestParam(name = "minPrice", required = false) Optional<Double> minPrice,
+            @RequestParam(name = "maxPrice", required = false) Optional<Double> maxPrice,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        // start with a “true” predicate
         Specification<FactProductShoes> spec = (root, query, cb) -> cb.conjunction();
 
-        // apply each filter with a simple if-check
         if (brand.isPresent()) {
             spec = spec.and(ProductShoesSpecifications.hasBrand(brand.get()));
         }
@@ -63,12 +65,19 @@ public class FactProductShoesController {
         if (ageGroup.isPresent()) {
             spec = spec.and(ProductShoesSpecifications.hasAgeGroup(ageGroup.get()));
         }
+
         if (date.isPresent()) {
             spec = spec.and(ProductShoesSpecifications.collectedOn(date.get()));
         } else if (startDate.isPresent() && endDate.isPresent()) {
-            spec = spec.and(ProductShoesSpecifications.collectedBetween(
-                    startDate.get(), endDate.get()
-            ));
+            spec = spec.and(ProductShoesSpecifications.collectedBetween(startDate.get(), endDate.get()));
+        }
+
+        if (sizes.isPresent()) {
+            List<String> sizeList = Arrays.stream(sizes.get().split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+            spec = spec.and(ProductShoesSpecifications.hasAnySize(sizeList));
         }
 
         if (keyword.isPresent()) {
@@ -79,8 +88,21 @@ public class FactProductShoesController {
             spec = spec.and(ProductShoesSpecifications.isOnSale());
         }
 
+        // ✅ NEW: final price range
+        if (minPrice.isPresent() && maxPrice.isPresent()) {
+            spec = spec.and(
+                    ProductShoesSpecifications.finalPriceBetween(minPrice.get(), maxPrice.get())
+            );
+        } else if (minPrice.isPresent()) {
+            spec = spec.and(ProductShoesSpecifications.finalPriceGte(minPrice.get()));
+        } else if (maxPrice.isPresent()) {
+            spec = spec.and(ProductShoesSpecifications.finalPriceLte(maxPrice.get()));
+        }
+
         return service.fetchBySpec(spec, pageable);
     }
+
+
 
     /**
      * AI‐powered endpoint. Use GET /api/search?q=…&page=…&size=…

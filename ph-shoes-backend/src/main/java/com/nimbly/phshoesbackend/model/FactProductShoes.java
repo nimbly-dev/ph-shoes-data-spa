@@ -56,4 +56,7 @@ public class FactProductShoes {
 
     @Column(name = "AGE_GROUP", length = 16777216)
     private String ageGroup;
+
+    @Column(name = "EXTRA", columnDefinition = "VARIANT")
+    private String extra;
 }
