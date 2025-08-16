@@ -13,7 +13,7 @@ interface AISearchProps {
   onClear: () => void;
   activeQuery: string;
   placeholder?: string;
-  sx?: any;                  // allow parent to pass extra styles
+  sx?: any;               
 }
 
 export const AISearch: React.FC<AISearchProps> = ({
@@ -51,7 +51,7 @@ export const AISearch: React.FC<AISearchProps> = ({
   return (
     <Box
       sx={{
-        width: '100%',             // stretch across the content area
+        width: '100%',            
         display: 'flex',
         justifyContent: 'flex-start',
         mb: 2,
@@ -69,7 +69,6 @@ export const AISearch: React.FC<AISearchProps> = ({
         placeholder={placeholder}
         InputLabelProps={{ shrink: false }}
         sx={{
-          // taller, clickable field; remove any artificial maxWidth
           maxWidth: '100%',
           '& .MuiOutlinedInput-root': { height: 44 },
         }}
