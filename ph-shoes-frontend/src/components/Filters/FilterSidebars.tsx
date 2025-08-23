@@ -1,4 +1,3 @@
-// src/components/Filters/FilterSidebars.tsx
 import * as React from 'react';
 import {
   Box, Stack, Button, Divider, Typography, useMediaQuery, useTheme,
@@ -63,9 +62,6 @@ export function FilterSidebars({ draft, onDraftChange, onApply, onReset }: Props
         pr: 0.5,
       }}
     >
-      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-        Filters
-      </Typography>
 
       <Stack spacing={1.25}>
         {/* Brand — closed by default unless active */}

@@ -13,7 +13,6 @@ import {
 import { FilterList } from '@mui/icons-material';
 
 import TopNav from './components/Header/TopNav';
-// NOTE: we no longer render AISearch here (TopNav already includes it)
 import { FilterSidebars } from './components/Filters/FilterSidebars';
 import { ProductShoeList } from './components/ProductShoeList/ProductShoeList';
 import { ToggleSettingsModal } from './components/Toggles/ToggleSettingsModal';
@@ -31,17 +30,21 @@ export default function App() {
   const [page, setPage] = useState(0);
   useEffect(() => setPage(0), [pageSize]);
 
-  // ---------- sensible default date window: yesterday → today ----------
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // ---------- local date helpers (avoid UTC shift from toISOString) ----------
+  const fmtLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // sensible default date window: yesterday → today (LOCAL)
+  const todayStr = useMemo(() => fmtLocal(new Date()), []);
   const yesterdayStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    return fmtLocal(d);
   }, []);
 
   const defaultFilters: UIProductFilters = useMemo(
     () => ({
-      brand: 'newbalance',
+      // ⛔ remove default brand to avoid unintended filtering
       startDate: yesterdayStr,
       endDate: todayStr,
     }),
@@ -72,7 +75,7 @@ export default function App() {
     return () => window.clearTimeout(id);
   }, [draftFilters, autoApply]);
 
-  // ---------- AI search handlers (TopNav calls these) ----------
+  // ---------- AI search handlers ----------
   const handleAiSearch = (nlQuery: string) => {
     if (nlQuery === aiQuery) {
       setAiQuery('');
@@ -104,7 +107,6 @@ export default function App() {
 
   return (
     <>
-      {/* Sticky header with compact search + icons */}
       <TopNav
         mode={mode}
         onToggleMode={toggleMode}
@@ -112,16 +114,11 @@ export default function App() {
         onSearch={handleAiSearch}
         onClear={handleAiClear}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenNotifications={() => {
-          /* stub for notifications popover */
-        }}
-        onOpenAccount={() => {
-          /* stub for account menu */
-        }}
+        onOpenNotifications={() => {}}
+        onOpenAccount={() => {}}
         unread={3}
       />
 
-      {/* Settings modal */}
       <ToggleSettingsModal
         open={settingsOpen}
         useVector={useVectorFallback}
@@ -129,7 +126,6 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
       />
 
-      {/* Page body (no duplicate title/search here) */}
       <Container disableGutters maxWidth={false} sx={{ width: '100%' }}>
         <Box
           sx={{
@@ -140,7 +136,6 @@ export default function App() {
             pb: 4,
           }}
         >
-          {/* MOBILE: filter drawer trigger */}
           {isMobile && (
             <Button
               startIcon={<FilterList />}
@@ -151,7 +146,6 @@ export default function App() {
             </Button>
           )}
 
-          {/* MOBILE: drawer */}
           {isMobile && (
             <Drawer
               anchor="right"
@@ -172,7 +166,6 @@ export default function App() {
             </Drawer>
           )}
 
-          {/* DESKTOP: two-column layout with sticky filters */}
           {!isMobile && (
             <Box
               sx={{
@@ -201,7 +194,6 @@ export default function App() {
             </Box>
           )}
 
-          {/* MOBILE: full-width grid */}
           {isMobile && (
             <ProductShoeList
               aiQuery={showingAI ? aiQuery : ''}

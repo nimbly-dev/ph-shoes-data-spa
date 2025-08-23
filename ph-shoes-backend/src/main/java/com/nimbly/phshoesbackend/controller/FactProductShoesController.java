@@ -88,7 +88,6 @@ public class FactProductShoesController {
             spec = spec.and(ProductShoesSpecifications.isOnSale());
         }
 
-        // ✅ NEW: final price range
         if (minPrice.isPresent() && maxPrice.isPresent()) {
             spec = spec.and(
                     ProductShoesSpecifications.finalPriceBetween(minPrice.get(), maxPrice.get())

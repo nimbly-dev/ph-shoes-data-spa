@@ -2,8 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Box, TextField, Popover } from '@mui/material';
 import { DateRange } from 'react-date-range';
 import { formatISO } from 'date-fns';
-import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';
+// (Optional if you move these to main.tsx)
+// import 'react-date-range/dist/styles.css';
+// import 'react-date-range/dist/theme/default.css';
 
 type Props = {
   startDate?: string;
@@ -21,11 +22,24 @@ export function DateRangeField({ startDate, endDate, onChange }: Props) {
   const initialStart = startDate ? new Date(startDate) : getYesterday();
   const initialEnd   = endDate   ? new Date(endDate)   : getYesterday();
 
-  const [range, setRange] = useState([{ key: 'sel', startDate: initialStart, endDate: initialEnd }]);
+  // IMPORTANT: use key = 'selection'
+  const [range, setRange] = useState([
+    { key: 'selection', startDate: initialStart, endDate: initialEnd }
+  ]);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
+  // keep internal state in sync when parent props change
   useEffect(() => {
-    const r = range[0];
+    setRange([{
+      key: 'selection',
+      startDate: startDate ? new Date(startDate) : getYesterday(),
+      endDate:   endDate   ? new Date(endDate)   : getYesterday(),
+    }]);
+  }, [startDate, endDate]);
+
+  // bubble up changes whenever user picks a date
+  useEffect(() => {
+    const r = range[0] as any;
     onChange(
       r.startDate ? formatISO(r.startDate, { representation: 'date' }) : undefined,
       r.endDate   ? formatISO(r.endDate,   { representation: 'date' }) : undefined

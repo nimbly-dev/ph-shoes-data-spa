@@ -1,11 +1,13 @@
 package com.nimbly.phshoesbackend.repository.jpa;
 
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -60,17 +62,32 @@ public class ProductShoesSpecifications {
     /**
      * Existing date-based specs — assumes your dwid is formatted YYYYMMDD
      */
-    public static Specification<FactProductShoes> collectedOn(LocalDate date) {
-        String dwid = date.format(DateTimeFormatter.BASIC_ISO_DATE);
-        return (r, q, cb) ->
-                cb.equal(r.get("key").get("dwid"), dwid);
+    public static Specification<FactProductShoes> collectedOn(LocalDate d) {
+        return (root, query, cb) -> cb.and(
+                cb.equal(root.get("year"),  d.getYear()),
+                cb.equal(root.get("month"), d.getMonthValue()),
+                cb.equal(root.get("day"),   d.getDayOfMonth())
+        );
     }
 
-    public static Specification<FactProductShoes> collectedBetween(LocalDate start, LocalDate end) {
-        String s = start.format(DateTimeFormatter.BASIC_ISO_DATE);
-        String e = end.format(DateTimeFormatter.BASIC_ISO_DATE);
-        return (r, q, cb) ->
-                cb.between(r.get("key").get("dwid"), s, e);
+
+    public static Specification<FactProductShoes> collectedBetween(LocalDate start, LocalDate endInclusive) {
+        // Turn start/end into comparable ints
+        final int s = start.getYear() * 10000 + start.getMonthValue() * 100 + start.getDayOfMonth();
+        final int e = endInclusive.getYear() * 10000 + endInclusive.getMonthValue() * 100 + endInclusive.getDayOfMonth();
+
+        return (root, query, cb) -> {
+            // Build YYYYMMDD from columns: year*10000 + month*100 + day
+            Expression<Integer> y = root.get("year");
+            Expression<Integer> m = root.get("month");
+            Expression<Integer> d = root.get("day");
+
+            Expression<Integer> yTimes = cb.prod(y, 10000);
+            Expression<Integer> mTimes = cb.prod(m, 100);
+            Expression<Integer> ymd    = cb.sum(cb.sum(yTimes, mTimes), d);
+
+            return cb.between(ymd, s, e); // inclusive on both ends
+        };
     }
 
     public static Specification<FactProductShoes> hasAnySize(List<String> sizes) {

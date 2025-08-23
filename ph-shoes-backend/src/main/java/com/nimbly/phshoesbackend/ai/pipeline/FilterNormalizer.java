@@ -3,91 +3,75 @@ package com.nimbly.phshoesbackend.ai.pipeline;
 import com.nimbly.phshoesbackend.model.dto.AISearchFilterCriteria;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+/**
+ * Normalizes fields (brands, gender, keywords, sizes, etc.) into canonical forms.
+ */
 @Component
 public class FilterNormalizer {
 
-    /**
-     * Apply all trivial, deterministic normalizations to a NormalFilterCriteria:
-     *  - “men”/“men's” → “male”; “women”/“women's” → “female”
-     *  - If gender=”kids” or “children” → move “kids” into subtitleKeywords (leave gender=null)
-     *  - Strip spaces/punctuation from multiword brands and lowercase them
-     *
-     * You can add more rules here if needed.
-     */
-    public static void normalize(AISearchFilterCriteria criteria) {
-        if (criteria == null) {
-            return;
-        }
+    public static void normalize(AISearchFilterCriteria c) {
+        if (c == null) return;
+        normalizeBrands(c);
+        normalizeGender(c);
+        normalizeKeywordLists(c);
+        normalizeSizes(c);
+    }
 
-        normalizeGender(criteria);
-        normalizeKidsAsSubtitle(criteria);
-        normalizeBrands(criteria);
+    private static void normalizeBrands(AISearchFilterCriteria c) {
+        if (c.getBrands() == null) return;
+        List<String> b = c.getBrands().stream()
+                .filter(Objects::nonNull)
+                .map(s -> s.trim().toLowerCase().replaceAll("\\s+", "")) // "new balance" -> "newbalance"
+                .distinct()
+                .collect(Collectors.toList());
+        c.setBrands(b.isEmpty() ? null : b);
     }
 
     private static void normalizeGender(AISearchFilterCriteria c) {
-        String g = c.getGender();
-        if (g == null) {
-            return;
+        if (c.getGender() == null) return;
+        String g = c.getGender().trim().toLowerCase();
+        if (g.startsWith("m")) g = "male";
+        else if (g.startsWith("f")) g = "female";
+        else if (g.contains("kid")) g = "kids";
+        else if (g.contains("uni")) g = "unisex";
+        c.setGender(g);
+    }
+
+    private static void normalizeKeywordLists(AISearchFilterCriteria c) {
+        if (c.getTitleKeywords() != null) {
+            c.setTitleKeywords(c.getTitleKeywords().stream()
+                    .filter(Objects::nonNull)
+                    .map(s -> s.trim().toLowerCase())
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList()));
+            if (c.getTitleKeywords().isEmpty()) c.setTitleKeywords(null);
         }
-
-        String raw = g.trim().toLowerCase();
-        switch (raw) {
-            case "men":
-            case "men's":
-            case "mens":
-                c.setGender("male");
-                break;
-
-            case "women":
-            case "women's":
-            case "womens":
-                c.setGender("female");
-                break;
-
-            default:
-                c.setGender(raw);
+        if (c.getSubtitleKeywords() != null) {
+            c.setSubtitleKeywords(c.getSubtitleKeywords().stream()
+                    .filter(Objects::nonNull)
+                    .map(s -> s.trim().toLowerCase())
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList()));
+            if (c.getSubtitleKeywords().isEmpty()) c.setSubtitleKeywords(null);
         }
     }
 
-    private static void normalizeKidsAsSubtitle(AISearchFilterCriteria c) {
-        String g = c.getGender();
-        if (g == null) {
-            return;
-        }
-
-        String raw = g.trim().toLowerCase();
-        if (raw.equals("kids") || raw.equals("child") || raw.equals("children")) {
-            c.setGender(null);
-
-            List<String> subs = c.getSubtitleKeywords();
-            if (subs == null) {
-                subs = new ArrayList<>();
-            }
-            if (!subs.contains("kids")) {
-                subs.add("kids");
-            }
-            c.setSubtitleKeywords(subs);
-        }
-    }
-
-    private static void normalizeBrands(AISearchFilterCriteria criteria) {
-        List<String> raw = criteria.getBrands();
-        if (raw == null || raw.isEmpty()) {
-            return;
-        }
-
-        List<String> cleaned = raw.stream()
+    private static void normalizeSizes(AISearchFilterCriteria c) {
+        if (c.getSizes() == null) return;
+        List<String> s = c.getSizes().stream()
                 .filter(Objects::nonNull)
-                .map(b -> b.trim()
-                        .toLowerCase()
-                        .replaceAll("[^a-z0-9]+", ""))
-                .filter(s -> !s.isBlank())
-                .toList();
-
-        criteria.setBrands(cleaned);
+                .map(x -> x.trim().toLowerCase())
+                .map(x -> x.replaceAll("^(us|eu|uk)\\s*", ""))
+                .map(x -> x.replaceAll("[^0-9\\.]", ""))
+                .filter(x -> !x.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+        c.setSizes(s.isEmpty() ? null : s);
     }
 }

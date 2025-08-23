@@ -21,4 +21,5 @@ public class AISearchFilterCriteria {
     private List<String> titleKeywords;
     private List<String> subtitleKeywords;
     private String sortBy;
+    private List<String> sizes;
 }
