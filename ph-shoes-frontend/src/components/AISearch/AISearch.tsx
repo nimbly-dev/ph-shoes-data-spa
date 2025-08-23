@@ -13,7 +13,7 @@ interface AISearchProps {
   onClear: () => void;
   activeQuery: string;
   placeholder?: string;
-  sx?: any;               
+  sx?: any;
 }
 
 export const AISearch: React.FC<AISearchProps> = ({
@@ -51,10 +51,11 @@ export const AISearch: React.FC<AISearchProps> = ({
   return (
     <Box
       sx={{
-        width: '100%',            
+        width: '100%',
         display: 'flex',
+        alignItems: 'center',     // ← vertically center inside Toolbar
         justifyContent: 'flex-start',
-        mb: 2,
+        mb: 0,                    // ← remove extra bottom space
         ...sx,
       }}
     >
@@ -70,12 +71,14 @@ export const AISearch: React.FC<AISearchProps> = ({
         InputLabelProps={{ shrink: false }}
         sx={{
           maxWidth: '100%',
-          '& .MuiOutlinedInput-root': { height: 44 },
+          alignSelf: 'center',               // ← keep vertically centered
+          '& .MuiOutlinedInput-root': { 
+            height: 44,                      // consistent height
+          },
         }}
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
-              {/* Clear (X) first, then Search — per your previous layout */}
               {hasText && (
                 <IconButton
                   size="small"

@@ -67,7 +67,14 @@ export default function TopNav({
         maxWidth={false}
         sx={{ maxWidth: '1680px', mx: 'auto', px: { xs: 1.5, md: 3 } }}
       >
-        <Toolbar disableGutters sx={{ gap: 1, minHeight: 64 }}>
+        <Toolbar
+          disableGutters
+          sx={{
+            gap: 1,
+            minHeight: 64,
+            alignItems: 'center',          // ← vertically center all children
+          }}
+        >
           {/* Brand (left) */}
           <Typography
             variant="h6"
@@ -78,7 +85,14 @@ export default function TopNav({
 
           {/* Compact AI search (center) */}
           {!isDownMd && (
-            <Box sx={{ flex: 1, maxWidth: 820 }}>
+            <Box
+              sx={{
+                flex: 1,
+                maxWidth: 820,
+                display: 'flex',
+                alignItems: 'center',      // ← ensure search sits on same baseline
+              }}
+            >
               <AISearch
                 activeQuery={activeQuery}
                 onSearch={onSearch}
