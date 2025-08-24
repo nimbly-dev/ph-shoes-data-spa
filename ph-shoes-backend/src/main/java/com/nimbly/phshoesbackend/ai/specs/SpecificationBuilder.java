@@ -43,13 +43,15 @@ public class SpecificationBuilder {
         if (fc.getModel() != null && !fc.getModel().isBlank()) {
             spec = spec.and(ProductSpecs.titleMatchesPhrase(fc.getModel()));
         } else if (fc.getTitleKeywords() != null && !fc.getTitleKeywords().isEmpty()) {
-            spec = spec.and(ProductSpecs.titleContainsAll(fc.getTitleKeywords()));
+            // USE OR:
+            spec = spec.and(ProductSpecs.titleContainsAny(fc.getTitleKeywords()));
         }
+
 
         // freshness + guard rails
         spec = spec.and(ProductSpecs.latestOnly());
 
-        // optional minimum positive prices (if your data sometimes has zeros)
+
         // spec = spec.and(ProductSpecs.priceSaleMin(0.01)).and(ProductSpecs.priceOriginalMin(0.01));
 
         return spec;

@@ -65,7 +65,7 @@ public class SearchOrchestrator {
         );
 
         if (!useVector) {
-            return Page.empty(pageable);
+            return specRepo.findAll(specBuilder.build(criteria), pageable);
         }
 
         if (!candidates.hasContent()) {

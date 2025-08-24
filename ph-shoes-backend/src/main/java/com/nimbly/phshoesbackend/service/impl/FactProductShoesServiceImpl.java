@@ -61,6 +61,9 @@ public class FactProductShoesServiceImpl implements FactProductShoesService {
     public Page<FactProductShoes> aiSearch(String nlQuery,Boolean useVector ,Pageable pg) {
         // build + normalize + validate criteria
         AISearchFilterCriteria criteria = pipeline.process(nlQuery);
+
+        System.out.println(criteria);
+
         // run spec-search or vector-fallback
         return orchestrator.search(nlQuery, criteria, pg, useVector);
     }

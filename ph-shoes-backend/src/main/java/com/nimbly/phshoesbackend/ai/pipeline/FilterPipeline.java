@@ -41,7 +41,6 @@ public class FilterPipeline {
 
         // 4. normalize & validate
         FilterNormalizer.normalize(base);
-        validator.validate(base);
 
         return base;
     }

@@ -1,15 +1,13 @@
 package com.nimbly.phshoesbackend.repository.jpa;
 
 import com.nimbly.phshoesbackend.model.FactProductShoes;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class ProductShoesSpecifications {
@@ -263,5 +261,45 @@ public class ProductShoesSpecifications {
             return finalPred;
         };
     }
+
+    /** title LIKE any of the phrases (OR). */
+    public static Specification<FactProductShoes> titleContainsAny(List<String> phrases) {
+        return (Root<FactProductShoes> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            if (phrases == null || phrases.isEmpty()) return cb.conjunction();
+
+            Expression<String> title = cb.lower(root.get("title"));
+
+            Predicate[] likes = phrases.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .map(String::toLowerCase)
+                    .filter(s -> !s.isBlank())
+                    .map(s -> cb.like(title, "%" + s + "%"))
+                    .toArray(Predicate[]::new);
+
+            return likes.length == 0 ? cb.conjunction() : cb.or(likes);
+        };
+    }
+
+    /** title LIKE all of the phrases (AND). */
+    public static Specification<FactProductShoes> titleContainsAll(List<String> phrases) {
+        return (Root<FactProductShoes> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            if (phrases == null || phrases.isEmpty()) return cb.conjunction();
+
+            Expression<String> title = cb.lower(root.get("title"));
+
+            Predicate[] likes = phrases.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .map(String::toLowerCase)
+                    .filter(s -> !s.isBlank())
+                    .map(s -> cb.like(title, "%" + s + "%"))
+                    .toArray(Predicate[]::new);
+
+            return likes.length == 0 ? cb.conjunction() : cb.and(likes);
+        };
+    }
+
+
 
 }
