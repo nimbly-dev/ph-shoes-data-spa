@@ -11,42 +11,37 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FactProductShoesVectorRepository extends JpaRepository<FactProductShoes, FactProductShoesId> {
-
+public interface FactProductShoesVectorRepository
+        extends JpaRepository<FactProductShoes, FactProductShoesId> {
 
     @Query(value = """
         SELECT
-          f.ID             AS id,
-          f.DWID           AS dwid,
-          f.BRAND          AS brand,
-          f.YEAR           AS year,
-          f.MONTH          AS month,
-          f.DAY            AS day,
-          f.TITLE          AS title,
-          f.SUBTITLE       AS subtitle,
-          f.URL            AS url,
-          f.IMAGE          AS image,
-          f.PRICE_SALE     AS price_sale,
-          f.PRICE_ORIGINAL AS price_original,
-          f.GENDER         AS gender,
-          f.AGE_GROUP      AS age_group
+          TO_VARCHAR(f.DWID)   AS "dwid",
+          TO_VARCHAR(f.ID)     AS "id",
+          f.BRAND              AS "brand",
+          f.YEAR               AS "year",
+          f.MONTH              AS "month",
+          f.DAY                AS "day",
+          f.TITLE              AS "title",
+          f.SUBTITLE           AS "subtitle",
+          f.URL                AS "url",
+          f.IMAGE              AS "image",
+          f.PRICE_SALE         AS "price_sale",
+          f.PRICE_ORIGINAL     AS "price_original",
+          f.GENDER             AS "gender",
+          f.AGE_GROUP          AS "age_group",
+          TO_VARCHAR(f.EXTRA)  AS "extra"
         FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES f
         JOIN PH_SHOES_DB.PRODUCTION_MARTS.EMBEDDING_FACT_PRODUCT_SHOES e
           ON f.ID = e.ID
-        -- only keep the latest row for each product ID
-        QUALIFY ROW_NUMBER() OVER (
-          PARTITION BY f.ID
-          ORDER BY f.DWID DESC
-        ) = 1
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY f.ID ORDER BY f.DWID DESC) = 1
         ORDER BY VECTOR_COSINE_SIMILARITY(
-          e.embedding::VECTOR(FLOAT,1536),
+          e.EMBEDDING::VECTOR(FLOAT,1536),
           PARSE_JSON(:queryEmbeddingJson)::VECTOR(FLOAT,1536)
         ) DESC
         LIMIT  :#{#pageable.pageSize}
         OFFSET :#{#pageable.offset}
-        """,
-            nativeQuery = true
-    )
+        """, nativeQuery = true)
     List<FactProductShoes> searchByVector(
             @Param("queryEmbeddingJson") String queryEmbeddingJson,
             Pageable pageable
@@ -54,37 +49,33 @@ public interface FactProductShoesVectorRepository extends JpaRepository<FactProd
 
     @Query(value = """
         SELECT
-          f.ID             AS id,
-          f.DWID           AS dwid,
-          f.BRAND          AS brand,
-          f.YEAR           AS year,
-          f.MONTH          AS month,
-          f.DAY            AS day,
-          f.TITLE          AS title,
-          f.SUBTITLE       AS subtitle,
-          f.URL            AS url,
-          f.IMAGE          AS image,
-          f.PRICE_SALE     AS price_sale,
-          f.PRICE_ORIGINAL AS price_original,
-          f.GENDER         AS gender,
-          f.AGE_GROUP      AS age_group
+          TO_VARCHAR(f.DWID)   AS "dwid",
+          TO_VARCHAR(f.ID)     AS "id",
+          f.BRAND              AS "brand",
+          f.YEAR               AS "year",
+          f.MONTH              AS "month",
+          f.DAY                AS "day",
+          f.TITLE              AS "title",
+          f.SUBTITLE           AS "subtitle",
+          f.URL                AS "url",
+          f.IMAGE              AS "image",
+          f.PRICE_SALE         AS "price_sale",
+          f.PRICE_ORIGINAL     AS "price_original",
+          f.GENDER             AS "gender",
+          f.AGE_GROUP          AS "age_group",
+          TO_VARCHAR(f.EXTRA)  AS "extra"
         FROM PH_SHOES_DB.PRODUCTION_MARTS.FACT_PRODUCT_SHOES f
         JOIN PH_SHOES_DB.PRODUCTION_MARTS.EMBEDDING_FACT_PRODUCT_SHOES e
           ON f.ID = e.ID
         WHERE f.PRICE_SALE < f.PRICE_ORIGINAL
-        QUALIFY ROW_NUMBER() OVER (
-          PARTITION BY f.ID
-          ORDER BY f.DWID DESC
-        ) = 1
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY f.ID ORDER BY f.DWID DESC) = 1
         ORDER BY VECTOR_COSINE_SIMILARITY(
-          e.embedding::VECTOR(FLOAT,1536),
+          e.EMBEDDING::VECTOR(FLOAT,1536),
           PARSE_JSON(:queryEmbeddingJson)::VECTOR(FLOAT,1536)
         ) DESC
         LIMIT  :#{#pageable.pageSize}
         OFFSET :#{#pageable.offset}
-        """,
-            nativeQuery = true
-    )
+        """, nativeQuery = true)
     List<FactProductShoes> searchByVectorOnSale(
             @Param("queryEmbeddingJson") String queryEmbeddingJson,
             Pageable pageable
