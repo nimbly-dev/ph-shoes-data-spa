@@ -16,9 +16,16 @@ import TopNav from './components/Header/TopNav';
 import { FilterSidebars } from './components/Filters/FilterSidebars';
 import { ProductShoeList } from './components/ProductShoeList/ProductShoeList';
 import { ToggleSettingsModal } from './components/Toggles/ToggleSettingsModal';
+import { AccountMenu } from './components/Auth/AccountMenu';
+import { LoginDialog } from './components/Auth/LoginDialog';
+import { RegisterDialog } from './components/Auth/RegisterDialog';
+import { VerifyEmailNotice } from './components/Auth/VerifyEmailNotice';
+
+import { useAuth } from './hooks/useAuth';
 
 import { ColorModeContext } from './themes/ThemeContext';
 import { UIProductFilters } from './types/UIProductFilters';
+import { VerifyResultDialog } from './components/Auth/VerifyResultDialog';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
@@ -30,11 +37,10 @@ export default function App() {
   const [page, setPage] = useState(0);
   useEffect(() => setPage(0), [pageSize]);
 
-  // ---------- local date helpers (avoid UTC shift from toISOString) ----------
+
   const fmtLocal = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  // sensible default date window: yesterday → today (LOCAL)
   const todayStr = useMemo(() => fmtLocal(new Date()), []);
   const yesterdayStr = useMemo(() => {
     const d = new Date();
@@ -44,7 +50,6 @@ export default function App() {
 
   const defaultFilters: UIProductFilters = useMemo(
     () => ({
-      // ⛔ remove default brand to avoid unintended filtering
       startDate: yesterdayStr,
       endDate: todayStr,
     }),
@@ -105,6 +110,94 @@ export default function App() {
     setDrawerOpen(false);
   };
 
+  // ---------- auth ----------
+  const auth = useAuth();
+
+  const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+
+  // verification: separate “notice after register” vs “result from redirect”
+  const [verifyNoticeOpen, setVerifyNoticeOpen] = useState(false);
+  const [verifyResultOpen, setVerifyResultOpen] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyTitle, setVerifyTitle] = useState<string>('Email verified');
+  const [verifyMsg, setVerifyMsg] = useState<string | undefined>(undefined);
+
+  // optional: prefill email when opening login from verify result
+  const [loginEmailPrefill, setLoginEmailPrefill] = useState<string>('');
+
+  // account icon click → either open account menu or login
+  const handleAccountClick = (anchor: HTMLElement) => {
+    if (auth.user) setAccountAnchor(anchor);
+    else setLoginOpen(true);
+  };
+  const closeAccountMenu = () => setAccountAnchor(null);
+
+  // close login automatically when user appears
+  useEffect(() => {
+    if (loginOpen && auth.user && !auth.loading) setLoginOpen(false);
+  }, [loginOpen, auth.user, auth.loading]);
+
+  // registration success → show “check your email” notice
+  function handleRegistered(email: string) {
+    setRegisterOpen(false);
+    setVerifyEmail(email);
+    setVerifyNoticeOpen(true);
+  }
+
+  // cross-navigation
+  const goToRegister = () => { setLoginOpen(false); setRegisterOpen(true); };
+  const goToLogin    = () => { setRegisterOpen(false); setLoginOpen(true); };
+
+  // handle redirect flags from backend (?verified/&resent/&error)
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search);
+    const verified = qs.get('verified');
+    const resent   = qs.get('resent');
+    const error    = qs.get('error');
+    const email    = qs.get('email') || '';
+
+    if (verified === 'true') {
+      setVerifyTitle('Email verified');
+      setVerifyMsg(undefined);
+      setVerifyEmail(email);
+      setVerifyResultOpen(true);
+    } else if (verified === 'false' && error) {
+      setVerifyTitle('Verification failed');
+      const msg = ({
+        invalid: 'That verification link is invalid. Request a new one.',
+        not_found: 'We couldn’t find a matching verification request. It may have expired.',
+        expired: 'This verification link has expired. Request a new one.',
+        used: 'This verification link was already used.',
+      } as Record<string, string>)[error] ?? 'Something went wrong on our side. Please try again.';
+      setVerifyMsg(msg);
+      setVerifyEmail(email);
+      setVerifyResultOpen(true);
+    } else if (resent === 'true') {
+      setVerifyTitle('Verification email resent');
+      setVerifyMsg(`We sent a new verification link to ${email}.`);
+      setVerifyEmail(email);
+      setVerifyResultOpen(true);
+    } else if (resent === 'false' && error) {
+      setVerifyTitle('Resend failed');
+      setVerifyMsg('Could not resend the verification email. Please try again.');
+      setVerifyEmail(email);
+      setVerifyResultOpen(true);
+    }
+
+    if (verified || resent) {
+      const clean = window.location.pathname;
+      window.history.replaceState(null, '', clean);
+    }
+  }, []);
+
+  function openLogin(prefill?: string | null) {
+    setLoginEmailPrefill(prefill ?? '');
+    setVerifyResultOpen(false);
+    setLoginOpen(true);
+  }
+
   return (
     <>
       <TopNav
@@ -115,7 +208,7 @@ export default function App() {
         onClear={handleAiClear}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenNotifications={() => {}}
-        onOpenAccount={() => {}}
+        onOpenAccount={handleAccountClick}
         unread={3}
       />
 
@@ -204,6 +297,51 @@ export default function App() {
               onPageChange={(newPage) => setPage(newPage)}
             />
           )}
+
+          {/* Account dropdown (signed-in only) */}
+          {auth.user && (
+            <AccountMenu
+              anchorEl={accountAnchor}
+              onClose={closeAccountMenu}
+              email={auth.user.email}
+              onLogout={() => { auth.logout(); closeAccountMenu(); }}
+            />
+          )}
+
+          {/* Single Login dialog (keep only this one) */}
+          <LoginDialog
+            open={loginOpen}
+            loading={auth.loading}
+            error={auth.error}
+            onClose={() => setLoginOpen(false)}
+            onLogin={(email, pw) => auth.login(email, pw)}
+            onOpenRegister={goToRegister}
+          />
+
+          {/* Register dialog */}
+          <RegisterDialog
+            open={registerOpen}
+            onClose={() => setRegisterOpen(false)}
+            onRegistered={handleRegistered}
+            onOpenLogin={goToLogin}
+          />
+
+          {/* Post-register “check email” notice */}
+          <VerifyEmailNotice
+            open={verifyNoticeOpen}
+            email={verifyEmail}
+            onClose={() => setVerifyNoticeOpen(false)}
+          />
+
+          {/* Redirect result (success/failure/resend) */}
+          <VerifyResultDialog
+            open={verifyResultOpen}
+            email={verifyEmail}
+            title={verifyTitle}
+            message={verifyMsg}
+            onClose={() => setVerifyResultOpen(false)}
+            onLogin={openLogin}
+          />
         </Box>
       </Container>
     </>
