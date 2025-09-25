@@ -17,7 +17,9 @@ public class WebConfig {
                         .addMapping("/api/**")
                         .allowedOrigins(
                                 "http://localhost:5173",
-                                "https://ph-shoes-frontend.onrender.com"
+                                "https://ph-shoes-frontend.onrender.com",
+                                "https://www.phshoesproject.com",
+                                "https://phshoesproject.com"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
