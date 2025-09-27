@@ -9,6 +9,10 @@ RUN npm install
 
 # Copy the rest of your source & bake in the API URL
 COPY . .
+ARG VITE_API_BASE_URL
+ARG VITE_USER_ACCOUNTS_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_USER_ACCOUNTS_API_BASE_URL=$VITE_USER_ACCOUNTS_API_BASE_URL
 
 # Build the optimized single-file bundle
 RUN npm run build
