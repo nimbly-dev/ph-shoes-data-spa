@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -31,6 +31,15 @@ export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const suppressManualChangeRef = useRef(false);
+
+  const clearManualFiltersProgrammatically = (next: UIProductFilters = {}) => {
+    suppressManualChangeRef.current = true;
+    setDraftFilters(next);
+    setActiveFilters(next);
+    // release the guard after React flushes state
+    setTimeout(() => { suppressManualChangeRef.current = false; }, 0);
+  };
 
   // ---------- paging ----------
   const pageSize = isMobile ? 8 : 15;
@@ -82,6 +91,8 @@ export default function App() {
 
   // ---------- AI search handlers ----------
   const handleAiSearch = (nlQuery: string) => {
+    // Clear all manual filters when an AI search is triggered
+    clearManualFiltersProgrammatically({});
     if (nlQuery === aiQuery) {
       setAiQuery('');
       setTimeout(() => setAiQuery(nlQuery), 0);
@@ -91,25 +102,35 @@ export default function App() {
     setPage(0);
   };
 
+
   const handleAiClear = () => {
     setAiQuery('');
     setPage(0);
   };
 
+  const handleDraftChange = (next: UIProductFilters) => {
+    // only clear AI if this came from actual user interaction
+    if (!suppressManualChangeRef.current && aiQuery) setAiQuery('');
+    setDraftFilters(next);
+    setPage(0);
+  };
+  
   // ---------- Mobile drawer actions ----------
   const handleApplyFilters = () => {
+    if (aiQuery) setAiQuery('');
     setActiveFilters({ ...draftFilters });
     setPage(0);
     setDrawerOpen(false);
   };
 
   const handleResetFilters = () => {
+    if (aiQuery) setAiQuery('');
     setDraftFilters({ ...defaultFilters });
     setActiveFilters({ ...defaultFilters });
     setPage(0);
     setDrawerOpen(false);
   };
-
+  
   // ---------- auth ----------
   const auth = useAuth();
 
@@ -252,7 +273,7 @@ export default function App() {
               </Typography>
               <FilterSidebars
                 draft={draftFilters}
-                onDraftChange={setDraftFilters}
+                onDraftChange={handleDraftChange}
                 onApply={handleApplyFilters}
                 onReset={handleResetFilters}
               />
@@ -270,7 +291,7 @@ export default function App() {
             >
               <Box sx={{ position: 'sticky', top: 12, alignSelf: 'start' }}>
                 <Paper elevation={1} sx={{ p: 2.25, borderRadius: 2 }}>
-                  <FilterSidebars draft={draftFilters} onDraftChange={setDraftFilters} />
+                  <FilterSidebars draft={draftFilters} onDraftChange={handleDraftChange} />
                 </Paper>
               </Box>
 
