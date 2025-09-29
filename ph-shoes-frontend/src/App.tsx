@@ -67,7 +67,7 @@ export default function App() {
   // ---------- UI ----------
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [useVectorFallback, setUseVectorFallback] = useState(true);
+  const [useVectorFallback, setUseVectorFallback] = useState(false);
 
   // ---------- Desktop: auto-apply draft → active with debounce ----------
   const autoApply = !isMobile;
