@@ -90,65 +90,30 @@ public class ProductSpecs {
         return (root, query, cb) -> cb.conjunction();
     }
 
-    /**
-     * NEW: Filter sizes when sizes live in a stringified JSON inside the "extras" column:
-     * {"sizes":["7","8","7.5"], ...}
-     *
-     * We use LIKE patterns that look for the quoted size tokens inside the JSON array
-     * while minimizing false positives (e.g., "17" vs "7").
-     */
+
+    /** sizes are numeric strings; facts are US-only */
     public static Specification<FactProductShoes> sizeAnyInExtrasTextJson(List<String> sizes) {
         return (root, query, cb) -> {
             if (sizes == null || sizes.isEmpty()) return cb.conjunction();
 
-            // IMPORTANT: property name matches entity field
-            Expression<String> extra = cb.lower(root.get("extra"));
+            Expression<String> extraTxt = cb.function("TO_VARCHAR", String.class, root.get("extra"));
 
-            // must contain the "sizes" key first
-            Predicate hasSizesKey = cb.like(extra, "%\"sizes\"%");
-
-            List<Predicate> anySizePreds = new ArrayList<>();
-            for (String s : sizes) {
-                if (s == null) continue;
-                String v = s.trim().toLowerCase(); // e.g., "7" or "7.5"
-
-                // exact "7"
-                String pStartExact = "%\"sizes\"%[\"" + v + "\"%";
-                String pMidExact   = "%,\"" + v + "\"%";
-                String pEndExact   = "%\"" + v + "\"]%";
-
-                // variants with US either side; allow optional space: "7 us", "7us", "us 7", "us7"
-                String vUsRightSp  = v + " us";
-                String vUsRight    = v + "us";
-                String vUsLeftSp   = "us " + v;
-                String vUsLeft     = "us" + v;
-
-                String pStartUsRSp = "%\"sizes\"%[\"" + vUsRightSp + "\"%";
-                String pMidUsRSp   = "%,\"" + vUsRightSp + "\"%";
-                String pEndUsRSp   = "%\"" + vUsRightSp + "\"]%";
-
-                String pStartUsR   = "%\"sizes\"%[\"" + vUsRight + "\"%";
-                String pMidUsR     = "%,\"" + vUsRight + "\"%";
-                String pEndUsR     = "%\"" + vUsRight + "\"]%";
-
-                String pStartUsLSp = "%\"sizes\"%[\"" + vUsLeftSp + "\"%";
-                String pMidUsLSp   = "%,\"" + vUsLeftSp + "\"%";
-                String pEndUsLSp   = "%\"" + vUsLeftSp + "\"]%";
-
-                String pStartUsL   = "%\"sizes\"%[\"" + vUsLeft + "\"%";
-                String pMidUsL     = "%,\"" + vUsLeft + "\"%";
-                String pEndUsL     = "%\"" + vUsLeft + "\"]%";
-
-                anySizePreds.add(cb.or(
-                        cb.like(extra, pStartExact), cb.like(extra, pMidExact), cb.like(extra, pEndExact),
-                        cb.like(extra, pStartUsRSp), cb.like(extra, pMidUsRSp), cb.like(extra, pEndUsRSp),
-                        cb.like(extra, pStartUsR),   cb.like(extra, pMidUsR),   cb.like(extra, pEndUsR),
-                        cb.like(extra, pStartUsLSp), cb.like(extra, pMidUsLSp), cb.like(extra, pEndUsLSp),
-                        cb.like(extra, pStartUsL),   cb.like(extra, pMidUsL),   cb.like(extra, pEndUsL)
-                ));
-            }
-
-            return cb.and(hasSizesKey, cb.or(anySizePreds.toArray(new Predicate[0])));
+            Predicate[] any = sizes.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> {
+                        String esc = s.replace(".", "\\.");
+                        // ..."sizes":[ ... "<esc>" ... ]
+                        return cb.isTrue(cb.function(
+                                "REGEXP_LIKE", Boolean.class,
+                                extraTxt,
+                                cb.literal("\\\"sizes\\\"\\s*:\\s*\\[[^\\]]*\\\"" + esc + "\\\"")
+                        ));
+                    })
+                    .toArray(Predicate[]::new);
+            return cb.or(any);
         };
     }
+
 }

@@ -239,7 +239,7 @@ The layout gracefully adapts to mobile screens, stacking filters and product car
 
 The PH Shoes Data SPA is deployed on [**Render.com**](https://render.com) using Dockerized services for both frontend and backend. The application is live and accessible at:
 
-👉 [https://ph-shoes-frontend.onrender.com/](https://ph-shoes-frontend.onrender.com/)
+👉 [https://phshoesproject.com](https://ph-shoes-frontend.onrender.com/)
 
 Both services are built from Docker images and deployed as separate Render web services:
 
