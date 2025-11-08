@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchMe, getToken, login as doLogin, logout as doLogout, extractErrorMessage } from '../services/authService';
+import { fetchMe, getToken, login as doLogin, logout as doLogout, extractErrorMessage } from '../services/userAccountsService';
 
 type AuthState = {
   user: { email: string } | null;

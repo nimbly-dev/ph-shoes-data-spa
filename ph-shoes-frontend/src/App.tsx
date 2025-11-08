@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -24,112 +24,39 @@ import { VerifyEmailNotice } from './components/Auth/VerifyEmailNotice';
 import { useAuth } from './hooks/useAuth';
 
 import { ColorModeContext } from './themes/ThemeContext';
-import { UIProductFilters } from './types/UIProductFilters';
 import { VerifyResultDialog } from './components/Auth/VerifyResultDialog';
+import { AccountSettingsDialog, UnsubscribeResultDialog } from './components/AccountSettings';
+import { extractErrorMessage } from './services/userAccountsService';
+import { useProductSearchControls } from './hooks/useProductSearchControls';
+import { useAccountRedirects } from './hooks/useAccountRedirects';
+import { UnsubscribeDialogState } from './types/DialogStates';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const suppressManualChangeRef = useRef(false);
-
-  const clearManualFiltersProgrammatically = (next: UIProductFilters = {}) => {
-    suppressManualChangeRef.current = true;
-    setDraftFilters(next);
-    setActiveFilters(next);
-    // release the guard after React flushes state
-    setTimeout(() => { suppressManualChangeRef.current = false; }, 0);
-  };
-
-  // ---------- paging ----------
-  const pageSize = isMobile ? 8 : 15;
-  const [page, setPage] = useState(0);
-  useEffect(() => setPage(0), [pageSize]);
-
-
-  const fmtLocal = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-  const todayStr = useMemo(() => fmtLocal(new Date()), []);
-  const yesterdayStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return fmtLocal(d);
-  }, []);
-
-  const defaultFilters: UIProductFilters = useMemo(
-    () => ({
-      startDate: yesterdayStr,
-      endDate: todayStr,
-    }),
-    [yesterdayStr, todayStr]
-  );
-
-  // ---------- manual filters state ----------
-  const [draftFilters, setDraftFilters] = useState<UIProductFilters>(defaultFilters);
-  const [activeFilters, setActiveFilters] = useState<UIProductFilters>(defaultFilters);
-
-  // ---------- AI search ----------
-  const [aiQuery, setAiQuery] = useState<string>('');
-  const showingAI = aiQuery.trim().length > 0;
-
-  // ---------- UI ----------
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [useVectorFallback, setUseVectorFallback] = useState(false);
-
-  // ---------- Desktop: auto-apply draft → active with debounce ----------
-  const autoApply = !isMobile;
-  useEffect(() => {
-    if (!autoApply) return;
-    const id = window.setTimeout(() => {
-      setActiveFilters({ ...draftFilters });
-      setPage(0);
-    }, 250);
-    return () => window.clearTimeout(id);
-  }, [draftFilters, autoApply]);
-
-  // ---------- AI search handlers ----------
-  const handleAiSearch = (nlQuery: string) => {
-    // Clear all manual filters when an AI search is triggered
-    clearManualFiltersProgrammatically({});
-    if (nlQuery === aiQuery) {
-      setAiQuery('');
-      setTimeout(() => setAiQuery(nlQuery), 0);
-    } else {
-      setAiQuery(nlQuery);
-    }
-    setPage(0);
-  };
-
-
-  const handleAiClear = () => {
-    setAiQuery('');
-    setPage(0);
-  };
-
-  const handleDraftChange = (next: UIProductFilters) => {
-    // only clear AI if this came from actual user interaction
-    if (!suppressManualChangeRef.current && aiQuery) setAiQuery('');
-    setDraftFilters(next);
-    setPage(0);
-  };
-  
-  // ---------- Mobile drawer actions ----------
-  const handleApplyFilters = () => {
-    if (aiQuery) setAiQuery('');
-    setActiveFilters({ ...draftFilters });
-    setPage(0);
-    setDrawerOpen(false);
-  };
-
-  const handleResetFilters = () => {
-    if (aiQuery) setAiQuery('');
-    setDraftFilters({ ...defaultFilters });
-    setActiveFilters({ ...defaultFilters });
-    setPage(0);
-    setDrawerOpen(false);
-  };
+  const {
+    draftFilters,
+    activeFilters,
+    aiQuery,
+    showingAI,
+    page,
+    pageSize,
+    drawerOpen,
+    settingsOpen,
+    useVectorFallback,
+    handleDraftChange,
+    handleApplyFilters,
+    handleResetFilters,
+    handleAiSearch,
+    handleAiClear,
+    openDrawer,
+    closeDrawer,
+    openSettings,
+    closeSettings,
+    setUseVectorFallback,
+    setPage,
+  } = useProductSearchControls(isMobile);
   
   // ---------- auth ----------
   const auth = useAuth();
@@ -144,6 +71,7 @@ export default function App() {
   const [verifyEmail, setVerifyEmail] = useState('');
   const [verifyTitle, setVerifyTitle] = useState<string>('Email verified');
   const [verifyMsg, setVerifyMsg] = useState<string | undefined>(undefined);
+  const [unsubscribeResult, setUnsubscribeResult] = useState<UnsubscribeDialogState | null>(null);
 
   // optional: prefill email when opening login from verify result
   const [loginEmailPrefill, setLoginEmailPrefill] = useState<string>('');
@@ -171,53 +99,41 @@ export default function App() {
   const goToRegister = () => { setLoginOpen(false); setRegisterOpen(true); };
   const goToLogin    = () => { setRegisterOpen(false); setLoginOpen(true); };
 
-  // handle redirect flags from backend (?verified/&resent/&error)
-  useEffect(() => {
-    const qs = new URLSearchParams(window.location.search);
-    const verified = qs.get('verified');
-    const resent   = qs.get('resent');
-    const error    = qs.get('error');
-    const email    = qs.get('email') || '';
+  const handleVerifyRedirectResult = useCallback(
+    ({ title, message, email }: { title: string; message?: string; email?: string }) => {
+      setVerifyTitle(title);
+      setVerifyMsg(message);
+      setVerifyEmail(email ?? '');
+      setVerifyResultOpen(true);
+    },
+    []
+  );
 
-    if (verified === 'true') {
-      setVerifyTitle('Email verified');
-      setVerifyMsg(undefined);
-      setVerifyEmail(email);
-      setVerifyResultOpen(true);
-    } else if (verified === 'false' && error) {
-      setVerifyTitle('Verification failed');
-      const msg = ({
-        invalid: 'That verification link is invalid. Request a new one.',
-        not_found: 'We couldn’t find a matching verification request. It may have expired.',
-        expired: 'This verification link has expired. Request a new one.',
-        used: 'This verification link was already used.',
-      } as Record<string, string>)[error] ?? 'Something went wrong on our side. Please try again.';
-      setVerifyMsg(msg);
-      setVerifyEmail(email);
-      setVerifyResultOpen(true);
-    } else if (resent === 'true') {
-      setVerifyTitle('Verification email resent');
-      setVerifyMsg(`We sent a new verification link to ${email}.`);
-      setVerifyEmail(email);
-      setVerifyResultOpen(true);
-    } else if (resent === 'false' && error) {
-      setVerifyTitle('Resend failed');
-      setVerifyMsg('Could not resend the verification email. Please try again.');
-      setVerifyEmail(email);
-      setVerifyResultOpen(true);
-    }
-
-    if (verified || resent) {
-      const clean = window.location.pathname;
-      window.history.replaceState(null, '', clean);
-    }
+  const handleUnsubscribeRedirectResult = useCallback((state: UnsubscribeDialogState) => {
+    setUnsubscribeResult(state);
   }, []);
+
+  useAccountRedirects({
+    onVerifyResult: handleVerifyRedirectResult,
+    onUnsubscribeResult: handleUnsubscribeRedirectResult,
+  });
 
   function openLogin(prefill?: string | null) {
     setLoginEmailPrefill(prefill ?? '');
     setVerifyResultOpen(false);
     setLoginOpen(true);
   }
+
+  //Accounts Setting
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+
+  const handleAccountDeleted = async () => {
+    try {
+      await auth.logout();
+    } catch {
+      // token was already revoked with account deletion
+    }
+  };
 
   return (
     <>
@@ -227,7 +143,7 @@ export default function App() {
         activeQuery={aiQuery}
         onSearch={handleAiSearch}
         onClear={handleAiClear}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={openSettings}
         onOpenNotifications={() => {}}
         onOpenAccount={handleAccountClick}
         unread={3}
@@ -237,7 +153,7 @@ export default function App() {
         open={settingsOpen}
         useVector={useVectorFallback}
         onChange={setUseVectorFallback}
-        onClose={() => setSettingsOpen(false)}
+        onClose={closeSettings}
       />
 
       <Container disableGutters maxWidth={false} sx={{ width: '100%' }}>
@@ -253,7 +169,7 @@ export default function App() {
           {isMobile && (
             <Button
               startIcon={<FilterList />}
-              onClick={() => setDrawerOpen(true)}
+              onClick={openDrawer}
               sx={{ my: 2 }}
             >
               Filters
@@ -264,7 +180,7 @@ export default function App() {
             <Drawer
               anchor="right"
               open={drawerOpen}
-              onClose={() => setDrawerOpen(false)}
+              onClose={closeDrawer}
               ModalProps={{ keepMounted: true }}
               PaperProps={{ sx: { width: '80vw', maxWidth: 320, p: 2 } }}
             >
@@ -326,6 +242,7 @@ export default function App() {
               onClose={closeAccountMenu}
               email={auth.user.email}
               onLogout={() => { auth.logout(); closeAccountMenu(); }}
+              onOpenSettings={() => setAccountSettingsOpen(true)}
             />
           )}
 
@@ -363,6 +280,26 @@ export default function App() {
             onClose={() => setVerifyResultOpen(false)}
             onLogin={openLogin}
           />
+
+          {/* Redirect result (success/failure/resend) */}
+          <AccountSettingsDialog
+            open={accountSettingsOpen}
+            onClose={() => setAccountSettingsOpen(false)}
+            onAccountDeleted={handleAccountDeleted}
+            email={auth.user?.email}
+          />
+
+          {unsubscribeResult && (
+            <UnsubscribeResultDialog
+              open={unsubscribeResult.open}
+              status={unsubscribeResult.status}
+              title={unsubscribeResult.title}
+              message={unsubscribeResult.message}
+              email={unsubscribeResult.email}
+              onClose={() => setUnsubscribeResult(null)}
+            />
+          )}
+
         </Box>
       </Container>
     </>

@@ -3,7 +3,7 @@ import {
   Dialog, IconButton, Box, Typography, TextField, Button, CircularProgress, Link as MUILink
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { registerAccount, extractErrorMessage, extractFieldErrors } from '../../services/authService';
+import { registerAccount, extractErrorMessage, extractFieldErrors } from '../../services/userAccountsService';
 import { isEmail, passwordLengthOK, passwordComplexOK } from '../../utils/validators';
 
 type Props = {
