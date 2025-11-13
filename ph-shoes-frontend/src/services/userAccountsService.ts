@@ -11,6 +11,7 @@ import { RegisterRequest } from '../types/RegisterRequest';
 const STORAGE_KEY = 'phshoes.auth.token';
 
 const BASE_URL = (import.meta as any).env.VITE_USER_ACCOUNTS_API_BASE_URL;
+export const USER_ACCOUNTS_API_BASE_URL: string | undefined = BASE_URL;
 
 export type SubscriptionStatusResponse = {
   email: string;

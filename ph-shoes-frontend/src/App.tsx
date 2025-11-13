@@ -71,6 +71,7 @@ export default function App() {
   const [verifyEmail, setVerifyEmail] = useState('');
   const [verifyTitle, setVerifyTitle] = useState<string>('Email verified');
   const [verifyMsg, setVerifyMsg] = useState<string | undefined>(undefined);
+  const [verifyStatus, setVerifyStatus] = useState<'loading' | 'success' | 'error' | undefined>(undefined);
   const [unsubscribeResult, setUnsubscribeResult] = useState<UnsubscribeDialogState | null>(null);
 
   // optional: prefill email when opening login from verify result
@@ -100,10 +101,11 @@ export default function App() {
   const goToLogin    = () => { setRegisterOpen(false); setLoginOpen(true); };
 
   const handleVerifyRedirectResult = useCallback(
-    ({ title, message, email }: { title: string; message?: string; email?: string }) => {
+    ({ title, message, email, status }: { title: string; message?: string; email?: string; status?: 'loading' | 'success' | 'error' }) => {
       setVerifyTitle(title);
       setVerifyMsg(message);
       setVerifyEmail(email ?? '');
+      setVerifyStatus(status);
       setVerifyResultOpen(true);
     },
     []
@@ -121,8 +123,13 @@ export default function App() {
   function openLogin(prefill?: string | null) {
     setLoginEmailPrefill(prefill ?? '');
     setVerifyResultOpen(false);
+    setVerifyStatus(undefined);
     setLoginOpen(true);
   }
+  const closeVerifyResultDialog = () => {
+    setVerifyResultOpen(false);
+    setVerifyStatus(undefined);
+  };
 
   //Accounts Setting
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
@@ -272,14 +279,15 @@ export default function App() {
           />
 
           {/* Redirect result (success/failure/resend) */}
-          <VerifyResultDialog
-            open={verifyResultOpen}
-            email={verifyEmail}
-            title={verifyTitle}
-            message={verifyMsg}
-            onClose={() => setVerifyResultOpen(false)}
-            onLogin={openLogin}
-          />
+        <VerifyResultDialog
+          open={verifyResultOpen}
+          email={verifyEmail}
+          title={verifyTitle}
+          message={verifyMsg}
+          status={verifyStatus}
+          onClose={closeVerifyResultDialog}
+          onLogin={openLogin}
+        />
 
           {/* Redirect result (success/failure/resend) */}
           <AccountSettingsDialog

@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { buildCombinedSearchParams, normalizeRouteSegment, readParamValue } from '../utils/urlParams';
 import { UnsubscribeDialogState } from '../types/DialogStates';
+import { USER_ACCOUNTS_API_BASE_URL } from '../services/userAccountsService';
 
 type VerifyResult = {
   title: string;
   message?: string;
   email?: string;
+  status?: 'loading' | 'success' | 'error';
 };
 
 type UseAccountRedirectsOptions = {
@@ -17,6 +19,7 @@ export function useAccountRedirects({ onVerifyResult, onUnsubscribeResult }: Use
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = buildCombinedSearchParams();
+    const token = readParamValue(params, 'token');
     const verified = params.get('verified');
     const resent = params.get('resent');
     const error = params.get('error');
@@ -27,18 +30,44 @@ export function useAccountRedirects({ onVerifyResult, onUnsubscribeResult }: Use
       window.history.replaceState(null, '', window.location.pathname);
     };
 
+    if (token) {
+      onVerifyResult({
+        title: 'Verifying your email…',
+        message: 'Sit tight while we confirm your request.',
+        email,
+        status: 'loading',
+      });
+      const base = USER_ACCOUNTS_API_BASE_URL?.replace(/\/$/, '');
+      if (base) {
+        const target = `${base}/api/v1/verify/email?token=${encodeURIComponent(token)}`;
+        // slight delay so dialog can render before navigation
+        setTimeout(() => {
+          window.location.replace(target);
+        }, 100);
+      } else {
+        onVerifyResult({
+          title: 'Verification failed',
+          message: 'We could not reach the verification service. Please try again later.',
+          email,
+          status: 'error',
+        });
+      }
+      return;
+    }
+
     if (notMe) {
       onVerifyResult({
         title: 'Verification dismissed',
         message: `Thanks for confirming. We cancelled that verification request${email ? ` for ${email}` : ''}.`,
         email,
+        status: 'success',
       });
       cleanUrl();
       return;
     }
 
     if (verified === 'true') {
-      onVerifyResult({ title: 'Email verified', email });
+      onVerifyResult({ title: 'Email verified', email, status: 'success' });
       cleanUrl();
       return;
     }
@@ -56,6 +85,7 @@ export function useAccountRedirects({ onVerifyResult, onUnsubscribeResult }: Use
         title: 'Verification failed',
         message: msg,
         email,
+        status: 'error',
       });
       cleanUrl();
       return;
@@ -66,6 +96,7 @@ export function useAccountRedirects({ onVerifyResult, onUnsubscribeResult }: Use
         title: 'Verification email resent',
         message: `We sent a new verification link to ${email}.`,
         email,
+        status: 'success',
       });
       cleanUrl();
       return;
@@ -76,6 +107,7 @@ export function useAccountRedirects({ onVerifyResult, onUnsubscribeResult }: Use
         title: 'Resend failed',
         message: 'Could not resend the verification email. Please try again.',
         email,
+        status: 'error',
       });
       cleanUrl();
     }
