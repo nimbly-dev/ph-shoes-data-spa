@@ -30,6 +30,8 @@ import { extractErrorMessage } from './services/userAccountsService';
 import { useProductSearchControls } from './hooks/useProductSearchControls';
 import { useAccountRedirects } from './hooks/useAccountRedirects';
 import { UnsubscribeDialogState } from './types/DialogStates';
+import { useServiceStatuses } from './hooks/useServiceStatuses';
+import { ServiceStatusDialog } from './components/Status/ServiceStatusDialog';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
@@ -60,6 +62,14 @@ export default function App() {
   
   // ---------- auth ----------
   const auth = useAuth();
+
+  const {
+    entries: serviceStatusEntries,
+    refresh: refreshServiceStatuses,
+    isRefreshing: refreshingServiceStatuses,
+    cooldownMsLeft: serviceStatusCooldownMs,
+  } = useServiceStatuses();
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -153,7 +163,17 @@ export default function App() {
         onOpenSettings={openSettings}
         onOpenNotifications={() => {}}
         onOpenAccount={handleAccountClick}
+        onOpenStatus={() => setStatusDialogOpen(true)}
         unread={3}
+        serviceStatuses={serviceStatusEntries}
+      />
+      <ServiceStatusDialog
+        open={statusDialogOpen}
+        onClose={() => setStatusDialogOpen(false)}
+        entries={serviceStatusEntries}
+        refreshing={refreshingServiceStatuses}
+        onRefresh={refreshServiceStatuses}
+        cooldownMsLeft={serviceStatusCooldownMs}
       />
 
       <ToggleSettingsModal

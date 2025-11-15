@@ -16,8 +16,10 @@ import {
   AccountCircle,
   Brightness4,
   Brightness7,
+  Lan,
 } from '@mui/icons-material';
 import { AISearch } from '../AISearch/AISearch';
+import { ServiceStatusEntry } from '../../hooks/useServiceStatuses';
 
 type Props = {
   mode: 'light' | 'dark';
@@ -32,8 +34,13 @@ type Props = {
   onOpenSettings?: () => void;
   onOpenNotifications?: (anchor: HTMLElement) => void;
   onOpenAccount?: (anchor: HTMLElement) => void;
+  onOpenStatus?: () => void;
 
   unread?: number;
+  serviceStatuses?: ServiceStatusEntry[];
+  serviceStatuses?: ServiceStatusEntry[];
+  onRefreshStatuses?: () => void;
+  refreshingStatuses?: boolean;
 };
 
 export default function TopNav({
@@ -47,10 +54,20 @@ export default function TopNav({
   onOpenSettings,
   onOpenNotifications,
   onOpenAccount,
+  onOpenStatus,
   unread = 0,
+  serviceStatuses = [],
 }: Props) {
   const theme = useTheme();
   const isDownMd = useMediaQuery(theme.breakpoints.down('md'));
+
+  const statusState = (() => {
+    if (!serviceStatuses.length) return null;
+    if (serviceStatuses.some((s) => s.serviceState === 'DOWN')) return 'error';
+    if (serviceStatuses.some((s) => s.serviceState === 'DEGRADED')) return 'warning';
+    if (serviceStatuses.every((s) => s.serviceState === 'UP')) return 'success';
+    return 'info';
+  })();
 
   return (
     <AppBar
@@ -112,6 +129,17 @@ export default function TopNav({
             <IconButton size="small" onClick={onToggleMode} aria-label="Toggle theme">
               {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
             </IconButton>
+
+            {onOpenStatus && (
+              <IconButton
+                size="small"
+                onClick={onOpenStatus}
+                aria-label="Service status"
+                color={statusState === 'success' ? 'success' : statusState === 'warning' ? 'warning' : statusState === 'error' ? 'error' : 'default'}
+              >
+                <Lan fontSize="small" />
+              </IconButton>
+            )}
 
             {onOpenNotifications && (
               <IconButton
