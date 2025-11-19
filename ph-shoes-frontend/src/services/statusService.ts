@@ -18,7 +18,7 @@ export async function fetchServiceStatus(target: ServiceStatusTarget): Promise<S
   const path = target.statusPath ?? '/system/status';
   const res = await fetch(`${target.baseUrl}${path}`, {
     method: 'GET',
-    credentials: 'include',
+    credentials: 'omit', 
   });
 
   if (!res.ok) {

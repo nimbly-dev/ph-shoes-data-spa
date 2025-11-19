@@ -8,7 +8,8 @@ export type ServiceStatusTarget = {
 const env = (import.meta as any).env;
 
 const rawTargets: Array<[string, string | undefined, string, string | undefined]> = [
-  ['accounts', env.VITE_USER_ACCOUNTS_API_BASE_URL, 'Accounts', '/api/v1/system/status'],
+  ['accounts', env.VITE_USER_ACCOUNTS_API_BASE_URL, 'User Accounts', '/api/v1/system/status'],
+  ['catalog', env.VITE_CATALOG_API_BASE_URL, 'Shoe Catalog', '/api/v1/system/status'],
 ];
 
 export const SERVICE_STATUS_TARGETS: ServiceStatusTarget[] = rawTargets
