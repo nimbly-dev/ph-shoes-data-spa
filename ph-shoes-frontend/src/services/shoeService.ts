@@ -6,8 +6,15 @@ import { UIProductFilters } from '../types/UIProductFilters';
 import { LatestData } from '../types/LatestData';
 
 const AI_QUERY_REGEX = /^[A-Za-z0-9\s!"#$%&'()*+,\-.\/:;<=>?@[\\\]^_`{|}~]+$/;
+const env = (import.meta as any).env;
+const baseURL = env.VITE_CATALOG_API_BASE_URL ?? env.VITE_API_BASE_URL;
+
+if (!baseURL) {
+  throw new Error('Shoe service API base URL is not configured.');
+}
+
 const client: AxiosInstance = axios.create({
-  baseURL: (import.meta as any).env.VITE_API_BASE_URL,
+  baseURL,
 });
 
 // Manual filters endpoint

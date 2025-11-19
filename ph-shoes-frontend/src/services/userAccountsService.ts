@@ -2,6 +2,7 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
   AxiosRequestHeaders,
+  AxiosHeaders,
 } from 'axios';
 import { TokenResponse } from '../types/TokenResponse';
 import { AccountMe } from '../types/AccountMe';
@@ -342,10 +343,16 @@ const resolveSuppressionToken = (token?: string, options?: TokenRequestOptions):
   return undefined;
 };
 
-const withTokenConfig = (token: string, extraHeaders?: AxiosRequestHeaders) => ({
-  params: { token },
-  headers: { 'X-Unsubscribe-Token': token, ...(extraHeaders ?? {}) },
-});
+const withTokenConfig = (token: string, extraHeaders?: Record<string, string>) => {
+  const headers = AxiosHeaders.from({
+    'X-Unsubscribe-Token': token,
+    ...(extraHeaders ?? {}),
+  });
+  return {
+    params: { token },
+    headers,
+  };
+};
 
 const buildAbsoluteUrl = (path: string, token: string) => {
   const base = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;

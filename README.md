@@ -51,6 +51,14 @@ The frontend is a **single-page application** (SPA) built with React, styled usi
 * An **AI search bar** with natural language support
 * Pagination, loading states, and a clean card-style product display
 
+### SPA environment configuration
+
+The Vite frontend consumes its backend services via `.env` entries:
+
+* `VITE_API_BASE_URL` — legacy monolith (kept for fallback / backwards compatibility).
+* `VITE_USER_ACCOUNTS_API_BASE_URL` — user accounts service (`http://localhost:8082` locally).
+* `VITE_CATALOG_API_BASE_URL` — **new** catalog service exposed by `ph-shoes-catalog-service` (`http://localhost:8083` locally).
+
 
 ---
 
