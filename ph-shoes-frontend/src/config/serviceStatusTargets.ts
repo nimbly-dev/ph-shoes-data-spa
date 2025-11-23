@@ -7,9 +7,15 @@ export type ServiceStatusTarget = {
 
 const env = (import.meta as any).env;
 
+const normalizeApiBase = (baseUrl: string | undefined) => {
+  if (!baseUrl) return undefined;
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+};
+
 const rawTargets: Array<[string, string | undefined, string, string | undefined]> = [
-  ['accounts', env.VITE_USER_ACCOUNTS_API_BASE_URL, 'User Accounts', '/api/v1/system/status'],
-  ['catalog', env.VITE_CATALOG_API_BASE_URL, 'Shoe Catalog', '/api/v1/system/status'],
+  ['accounts', env.VITE_USER_ACCOUNTS_API_BASE_URL, 'User Accounts', '/system/status'],
+  ['catalog', env.VITE_CATALOG_API_BASE_URL, 'Shoe Catalog', '/system/status'],
   ['alerts', env.VITE_ALERTS_API_BASE_URL, 'Alerts', '/system/status'],
 ];
 
@@ -19,5 +25,5 @@ export const SERVICE_STATUS_TARGETS: ServiceStatusTarget[] = rawTargets
     id,
     label,
     statusPath,
-    baseUrl: baseUrl!.replace(/\/+$/, ''), // trim trailing slash
+    baseUrl: normalizeApiBase(baseUrl!), // normalize and trim trailing slash
   }));

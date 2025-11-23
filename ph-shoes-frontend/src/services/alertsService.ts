@@ -2,10 +2,15 @@ import axios, { AxiosHeaders, AxiosInstance } from 'axios';
 import { getToken } from './userAccountsService';
 import { AlertCreateRequest, AlertResponse, AlertUpdateRequest } from '../types/alerts';
 
-const BASE_URL = (import.meta as any).env.VITE_ALERTS_API_BASE_URL || 'http://localhost:8084/api/v1';
+const rawBase = (import.meta as any).env.VITE_ALERTS_API_BASE_URL as string | undefined;
+const normalizedBase = (() => {
+  if (!rawBase) return 'http://localhost:8084/api/v1';
+  const trimmed = rawBase.replace(/\/+$/, '');
+  return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+})();
 
 const client: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: normalizedBase,
   withCredentials: true,
 });
 
