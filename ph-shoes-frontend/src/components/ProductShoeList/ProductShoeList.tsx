@@ -12,6 +12,8 @@ interface Props {
   page: number;
   pageSize: number;
   onPageChange: (newPage: number) => void;
+  onOpenAlert?: (shoe: import('../../types/ProductShoe').ProductShoe) => void;
+  alertedProductIds?: Set<string>;
 }
 
 export const ProductShoeList: React.FC<Props> = ({
@@ -21,6 +23,8 @@ export const ProductShoeList: React.FC<Props> = ({
   page,
   pageSize,
   onPageChange,
+  onOpenAlert,
+  alertedProductIds,
 }) => {
   const { data: aiData, loading: loadingAi, error: errorAi } =
     useShoesByAI(aiQuery, page, pageSize, useVector);
@@ -81,7 +85,12 @@ export const ProductShoeList: React.FC<Props> = ({
         }}
       >
         {contentArray.map((shoe) => (
-          <ProductShoeItem key={`${shoe.dwid}-${shoe.id}`} shoe={shoe} />
+          <ProductShoeItem
+            key={`${shoe.dwid}-${shoe.id}`}
+            shoe={shoe}
+            onAlert={onOpenAlert}
+            isAlerted={alertedProductIds?.has(shoe.id)}
+          />
         ))}
       </Box>
 

@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -32,6 +32,12 @@ import { useAccountRedirects } from './hooks/useAccountRedirects';
 import { UnsubscribeDialogState } from './types/DialogStates';
 import { useServiceStatuses } from './hooks/useServiceStatuses';
 import { ServiceStatusDialog } from './components/Status/ServiceStatusDialog';
+import { useAlerts } from './hooks/useAlerts';
+import { AlertsModal } from './components/Alerts/AlertsModal';
+import { AlertModal, AlertTarget } from './components/Alerts/AlertModal';
+import { ProductShoe } from './types/ProductShoe';
+import { AlertResponse, AlertCreateRequest, AlertUpdateRequest } from './types/alerts';
+import { AlertsService } from './services/alertsService';
 
 export default function App() {
   const { mode, toggleMode } = useContext(ColorModeContext);
@@ -144,11 +150,101 @@ export default function App() {
   //Accounts Setting
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
-  const handleAccountDeleted = async () => {
+const handleAccountDeleted = async () => {
     try {
       await auth.logout();
     } catch {
       // token was already revoked with account deletion
+    }
+  };
+
+  // ---------- alerts ----------
+  const {
+    alerts,
+    loading: alertsLoading,
+    triggeredCount,
+    create: createAlert,
+    update: updateAlert,
+    remove: deleteAlert,
+    refresh: refreshAlerts,
+  } = useAlerts(!!auth.user);
+  const [alertsDrawerOpen, setAlertsDrawerOpen] = useState(false);
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<AlertTarget | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<AlertResponse | null>(null);
+  const [returnToAlertsAfterEdit, setReturnToAlertsAfterEdit] = useState(false);
+  const [alertsView, setAlertsView] = useState<AlertResponse[]>([]);
+  const [alertsSearch, setAlertsSearch] = useState('');
+  const [alertsPage, setAlertsPage] = useState(1);
+  const [alertsTotalPages, setAlertsTotalPages] = useState(1);
+  const [alertsViewLoading, setAlertsViewLoading] = useState(false);
+
+  const openAlertModal = (product: AlertTarget, existing?: AlertResponse | null, fromAlertsList = false) => {
+    setSelectedProduct(product);
+    setSelectedAlert(existing ?? null);
+    setReturnToAlertsAfterEdit(fromAlertsList);
+    setAlertModalOpen(true);
+  };
+
+  const handleSaveAlert = async (
+    req: AlertCreateRequest | AlertUpdateRequest,
+    productId: string
+  ) => {
+    if (selectedAlert) await updateAlert(productId, req);
+    else await createAlert(req);
+  };
+
+  const handleDeleteAlert = async (productId: string) => {
+    await deleteAlert(productId);
+  };
+
+  const handleResetAlert = async (productId: string) => {
+    await updateAlert(productId, { productId, resetStatus: true } as AlertUpdateRequest);
+  };
+
+  const alertedProductIds = useMemo(() => new Set(alerts.map((a) => a.productId)), [alerts]);
+
+  useEffect(() => {
+    if (!alertsSearch.trim()) {
+      setAlertsView(alerts);
+      setAlertsTotalPages(1);
+      setAlertsPage(1);
+    }
+  }, [alerts, alertsSearch]);
+
+  const alertsPageSize = 8;
+  const runAlertsSearch = useCallback(async (term: string, page = 1) => {
+    const trimmed = term.trim();
+    setAlertsSearch(term);
+    setAlertsPage(page);
+    if (!trimmed) {
+      setAlertsView(alerts);
+      setAlertsTotalPages(1);
+      return;
+    }
+    setAlertsViewLoading(true);
+    try {
+      const res = await AlertsService.search({ q: trimmed, page: page - 1, size: alertsPageSize });
+      setAlertsView(res.content ?? []);
+      setAlertsTotalPages(res.totalPages ?? 1);
+    } finally {
+      setAlertsViewLoading(false);
+    }
+  }, [alerts, alertsPageSize]);
+
+  const closeAlertsModal = () => {
+    setAlertsDrawerOpen(false);
+    setAlertsSearch('');
+    setAlertsPage(1);
+    setAlertsTotalPages(1);
+    setAlertsView(alerts);
+  };
+
+  const handleCloseAlertModal = () => {
+    setAlertModalOpen(false);
+    if (returnToAlertsAfterEdit) {
+      setAlertsDrawerOpen(true);
+      setReturnToAlertsAfterEdit(false);
     }
   };
 
@@ -161,10 +257,10 @@ export default function App() {
         onSearch={handleAiSearch}
         onClear={handleAiClear}
         onOpenSettings={openSettings}
-        onOpenNotifications={() => {}}
+        onOpenNotifications={() => setAlertsDrawerOpen(true)}
         onOpenAccount={handleAccountClick}
         onOpenStatus={() => setStatusDialogOpen(true)}
-        unread={3}
+        unread={triggeredCount}
         serviceStatuses={serviceStatusEntries}
       />
       <ServiceStatusDialog
@@ -246,6 +342,24 @@ export default function App() {
                   page={page}
                   pageSize={pageSize}
                   onPageChange={(newPage) => setPage(newPage)}
+                  onOpenAlert={(shoe) =>
+                    auth.user
+                      ? openAlertModal(
+                          {
+                            id: shoe.id,
+                            title: shoe.title,
+                            priceSale: shoe.priceSale,
+                            priceOriginal: shoe.priceOriginal,
+                            brand: shoe.brand,
+                            image: shoe.image,
+                            productImageUrl: (shoe as any).productImageUrl ?? shoe.image,
+                            url: shoe.url,
+                          },
+                          alerts.find((a) => a.productId === shoe.id) ?? null
+                        )
+                      : openLogin()
+                  }
+                  alertedProductIds={alertedProductIds}
                 />
               </Box>
             </Box>
@@ -259,6 +373,24 @@ export default function App() {
               page={page}
               pageSize={pageSize}
               onPageChange={(newPage) => setPage(newPage)}
+              onOpenAlert={(shoe) =>
+                auth.user
+                  ? openAlertModal(
+                      {
+                        id: shoe.id,
+                        title: shoe.title,
+                        priceSale: shoe.priceSale,
+                        priceOriginal: shoe.priceOriginal,
+                        brand: shoe.brand,
+                        image: shoe.image,
+                        productImageUrl: (shoe as any).productImageUrl ?? shoe.image,
+                        url: shoe.url,
+                      },
+                      alerts.find((a) => a.productId === shoe.id) ?? null
+                    )
+                  : openLogin()
+              }
+              alertedProductIds={alertedProductIds}
             />
           )}
 
@@ -327,6 +459,47 @@ export default function App() {
               onClose={() => setUnsubscribeResult(null)}
             />
           )}
+
+          <AlertsModal
+            open={alertsDrawerOpen}
+            onClose={closeAlertsModal}
+            alerts={alertsSearch.trim() ? alertsView : alerts}
+            loading={alertsViewLoading || alertsLoading}
+            onRefresh={refreshAlerts}
+            search={alertsSearch}
+            page={alertsPage}
+            totalPages={alertsTotalPages}
+            onSearchChange={(val) => runAlertsSearch(val, 1)}
+            onPageChange={(p) => runAlertsSearch(alertsSearch, p)}
+            onReset={(a) => handleResetAlert(a.productId)}
+            onEdit={(a) =>
+              closeAlertsModal() ||
+              openAlertModal(
+                {
+                  id: a.productId,
+                  title: a.productName,
+                  priceSale: a.productCurrentPrice ?? 0,
+                  priceOriginal: a.productOriginalPrice ?? a.productCurrentPrice ?? 0,
+                  brand: a.productBrand,
+                  image: a.productImage ?? a.productImageUrl,
+                  productImageUrl: a.productImageUrl ?? a.productImage,
+                  url: a.productUrl,
+                },
+                a,
+                true
+              )
+            }
+            onDelete={(a) => handleDeleteAlert(a.productId)}
+          />
+
+          <AlertModal
+            open={alertModalOpen}
+            onClose={handleCloseAlertModal}
+            product={selectedProduct}
+            existingAlert={selectedAlert}
+            onSave={handleSaveAlert}
+            onDelete={handleDeleteAlert}
+          />
 
         </Box>
       </Container>

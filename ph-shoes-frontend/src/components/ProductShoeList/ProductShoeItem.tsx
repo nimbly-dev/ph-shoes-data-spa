@@ -1,14 +1,30 @@
 import React from 'react';
 import {
-  Card, CardContent, CardMedia, Typography, Link as MuiLink, CardActionArea, Box
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Link as MuiLink,
+  CardActionArea,
+  Box,
+  IconButton,
+  Tooltip,
+  Chip,
+  Stack,
 } from '@mui/material';
 import { ProductShoe } from '../../types/ProductShoe';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 
-interface Props { shoe: ProductShoe; }
+interface Props {
+  shoe: ProductShoe;
+  onAlert?: (shoe: ProductShoe) => void;
+  isAlerted?: boolean;
+}
 
 const PLACEHOLDER = '/NoImagePlaceholder.png';
 
-export const ProductShoeItem: React.FC<Props> = ({ shoe }) => {
+export const ProductShoeItem: React.FC<Props> = ({ shoe, onAlert, isAlerted }) => {
   const src = shoe.image || PLACEHOLDER;
   const productUrl = shoe.url;
   const collectedOn = `${String(shoe.year).padStart(4,'0')}-${String(shoe.month).padStart(2,'0')}-${String(shoe.day).padStart(2,'0')}`;
@@ -29,7 +45,40 @@ export const ProductShoeItem: React.FC<Props> = ({ shoe }) => {
         },
       }}
     >
-      <CardActionArea component={MuiLink} href={productUrl} target="_blank" rel="noopener" sx={{ alignItems: 'stretch' }}>
+      <CardActionArea
+        component={MuiLink}
+        href={productUrl}
+        target="_blank"
+        rel="noopener"
+        sx={{ alignItems: 'stretch', position: 'relative' }}
+      >
+        {onAlert && (
+          <Tooltip title={isAlerted ? 'Alert set' : 'Set alert'}>
+            <IconButton
+              size="small"
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                bgcolor: isAlerted ? 'rgba(46, 204, 113, 0.18)' : 'rgba(255,255,255,0.85)',
+                color: isAlerted ? 'success.main' : 'inherit',
+                boxShadow: isAlerted ? '0 0 0 6px rgba(46,204,113,0.12)' : 'none',
+                transition: 'all .2s ease',
+                '&:hover': {
+                  bgcolor: isAlerted ? 'rgba(46, 204, 113, 0.24)' : 'rgba(255,255,255,1)',
+                  boxShadow: isAlerted ? '0 0 0 8px rgba(46,204,113,0.16)' : 'none',
+                },
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAlert(shoe);
+              }}
+            >
+              {isAlerted ? <NotificationsActiveIcon fontSize="small" /> : <NotificationsNoneIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        )}
         {/* Image block */}
         <Box sx={{ px: 2, pt: 2 }}>
           <CardMedia
@@ -74,21 +123,31 @@ export const ProductShoeItem: React.FC<Props> = ({ shoe }) => {
             Collected on: {collectedOn}
           </Typography>
 
-          {/* Price */}
-          {shoe.priceSale < shoe.priceOriginal ? (
-            <Box component="span">
-              <Typography component="span" variant="body2" fontWeight="bold" color="primary">
+          {/* Price + alert inline */}
+          <Stack direction="row" spacing={1} alignItems="center">
+            {shoe.priceSale < shoe.priceOriginal ? (
+              <Box component="span">
+                <Typography component="span" variant="body2" fontWeight="bold" color="primary">
+                  ₱{shoe.priceSale.toLocaleString()}
+                </Typography>{' '}
+                <Typography component="span" variant="body2" sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
+                  ₱{shoe.priceOriginal.toLocaleString()}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography component="span" variant="body2" fontWeight="bold">
                 ₱{shoe.priceSale.toLocaleString()}
-              </Typography>{' '}
-              <Typography component="span" variant="body2" sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
-                ₱{shoe.priceOriginal.toLocaleString()}
               </Typography>
-            </Box>
-          ) : (
-            <Typography component="span" variant="body2" fontWeight="bold">
-              ₱{shoe.priceSale.toLocaleString()}
-            </Typography>
-          )}
+            )}
+            {isAlerted && (
+              <Chip
+                label="Alert set"
+                size="small"
+                color="success"
+                sx={{ fontWeight: 700, letterSpacing: 0.3 }}
+              />
+            )}
+          </Stack>
         </CardContent>
       </CardActionArea>
     </Card>
