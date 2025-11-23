@@ -32,12 +32,11 @@ type Props = {
 
   // optional actions
   onOpenSettings?: () => void;
-  onOpenNotifications?: (anchor: HTMLElement) => void;
+  onOpenNotifications?: (anchor?: HTMLElement) => void;
   onOpenAccount?: (anchor: HTMLElement) => void;
   onOpenStatus?: () => void;
 
   unread?: number;
-  serviceStatuses?: ServiceStatusEntry[];
   serviceStatuses?: ServiceStatusEntry[];
   onRefreshStatuses?: () => void;
   refreshingStatuses?: boolean;
