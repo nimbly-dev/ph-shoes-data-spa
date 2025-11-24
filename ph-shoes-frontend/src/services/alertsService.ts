@@ -3,10 +3,24 @@ import { getToken } from './userAccountsService';
 import { AlertCreateRequest, AlertResponse, AlertUpdateRequest } from '../types/alerts';
 
 const rawBase = (import.meta as any).env.VITE_ALERTS_API_BASE_URL as string | undefined;
+
 const normalizedBase = (() => {
-  if (!rawBase) return 'http://localhost:8084/api/v1';
-  const trimmed = rawBase.replace(/\/+$/, '');
-  return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+  const normalize = (val: string) => {
+    const trimmed = val.replace(/\/+$/, '');
+    return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+  };
+
+  if (rawBase && rawBase.trim()) {
+    return normalize(rawBase.trim());
+  }
+
+  // Fallback: if running in browser and not localhost, point to current origin (prod/stage)
+  if (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost') {
+    return normalize(`${window.location.protocol}//${window.location.host}`);
+  }
+
+  // Dev fallback
+  return 'http://localhost:8084/api/v1';
 })();
 
 const client: AxiosInstance = axios.create({
