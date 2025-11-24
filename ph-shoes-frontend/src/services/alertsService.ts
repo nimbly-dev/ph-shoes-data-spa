@@ -14,8 +14,8 @@ const normalizedBase = (() => {
     return normalize(rawBase.trim());
   }
 
-  // Dev-only fallback
-  return 'http://localhost:8084/api/v1';
+  // If not provided, default to prod endpoint.
+  return normalize('https://ph-shoes-alerts-service.onrender.com');
 })();
 
 const client: AxiosInstance = axios.create({
