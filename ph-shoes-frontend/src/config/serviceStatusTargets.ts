@@ -13,16 +13,10 @@ const normalizeApiBase = (baseUrl: string | undefined) => {
   return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
 };
 
-// If alerts base isn't provided, derive from current origin (only in PROD to avoid localhost).
-const inferredAlertsBase =
-  env.PROD && typeof window !== 'undefined' && window.location
-    ? `${window.location.protocol}//${window.location.host}`
-    : undefined;
-
 const rawTargets: Array<[string, string | undefined, string, string | undefined]> = [
   ['accounts', env.VITE_USER_ACCOUNTS_API_BASE_URL, 'User Accounts', '/system/status'],
   ['catalog', env.VITE_CATALOG_API_BASE_URL, 'Shoe Catalog', '/system/status'],
-  ['alerts', env.VITE_ALERTS_API_BASE_URL ?? inferredAlertsBase, 'Alerts', '/system/status'],
+  ['alerts', env.VITE_ALERTS_API_BASE_URL, 'Alerts', '/system/status'],
 ];
 
 export const SERVICE_STATUS_TARGETS: ServiceStatusTarget[] = rawTargets

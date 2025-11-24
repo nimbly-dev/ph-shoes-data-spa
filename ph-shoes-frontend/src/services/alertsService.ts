@@ -14,12 +14,7 @@ const normalizedBase = (() => {
     return normalize(rawBase.trim());
   }
 
-  // In production, never fall back to localhost; use the current origin.
-  if ((import.meta as any).env.PROD && typeof window !== 'undefined' && window.location) {
-    return normalize(`${window.location.protocol}//${window.location.host}`);
-  }
-
-  // Dev fallback
+  // Dev-only fallback
   return 'http://localhost:8084/api/v1';
 })();
 
