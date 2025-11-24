@@ -13,9 +13,9 @@ const normalizeApiBase = (baseUrl: string | undefined) => {
   return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
 };
 
-// If alerts base isn't provided and we're not on localhost, fall back to current origin.
+// If alerts base isn't provided, derive from current origin (only in PROD to avoid localhost).
 const inferredAlertsBase =
-  (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost')
+  env.PROD && typeof window !== 'undefined' && window.location
     ? `${window.location.protocol}//${window.location.host}`
     : undefined;
 
