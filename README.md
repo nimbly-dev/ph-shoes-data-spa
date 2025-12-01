@@ -43,13 +43,26 @@ The backend is responsible for exposing APIs that serve product data directly fr
 
 This hybrid approach supports both structured filtering and semantic search in a unified API layer.
 
-##  Frontend — React + MUI
+##  Frontend — React + MUI (Monorepo + Widgets)
 
-The frontend is a **single-page application** (SPA) built with React, styled using Material UI (MUI), and fully optimized for mobile responsiveness. It includes:
+The frontend is now a **widget-based SPA** powered by Vite + React + MUI. The repository is organised as a Turborepo-style workspace:
 
-* A **manual filter UI** (brand, gender, keyword filtering, on sale)
-* An **AI search bar** with natural language support
-* Pagination, loading states, and a clean card-style product display
+```
+apps/web                   # Thin shell SPA
+packages/
+  commons-service          # Shared services, hooks, config, utils
+  commons-ui               # Theme provider + design primitives
+  widget-runtime           # Shell ↔ widget contract
+  widgets/*                # Self-contained widget bundles (alerts, catalog, auth, etc.)
+```
+
+Key ideas:
+
+* `apps/web` owns only routing, layout, and cross-widget orchestration (widget registry, shell context, etc.).
+* Each UI feature (catalog search, alerts, auth gate, account settings, service status, etc.) lives in `packages/widgets/<widget>`.
+* Widgets are built as standalone ES modules and deployed under `/widgets/<widget-id>.js`. The shell lazy-loads them via `React.lazy` + dynamic `import()` in production.
+* Shared hooks (`useAuth`, `useAlerts`, `useServiceStatuses`, etc.), types, and config live in `packages/commons-service`.
+* Theming (`AppThemeProvider`, light/dark themes) lives in `packages/commons-ui`.
 
 ### SPA environment configuration
 
@@ -58,6 +71,47 @@ The Vite frontend consumes its backend services via `.env` entries:
 * `VITE_API_BASE_URL` — legacy monolith (kept for fallback / backwards compatibility).
 * `VITE_USER_ACCOUNTS_API_BASE_URL` — user accounts service (`http://localhost:8082` locally).
 * `VITE_CATALOG_API_BASE_URL` — **new** catalog service exposed by `ph-shoes-catalog-service` (`http://localhost:8083` locally).
+
+---
+
+## Development & Build
+
+### Prerequisites
+
+* Node.js 18+
+* npm 10+
+
+### Install & dev server
+
+```bash
+npm install
+npm run dev   # runs vite dev server for apps/web on port 5173
+```
+
+### Production build
+
+```bash
+npm run build
+```
+
+`npm run build` executes two steps:
+
+1. Builds **all widgets** (alerts-center, alert-editor, catalog-search, auth-gate, account-settings, settings-toggles, service-status) into `packages/widgets/*/dist/<widget>.js`.
+2. Builds the shell (`apps/web`) and copies each widget bundle into `apps/web/dist/widgets/`.
+
+The final build output (`apps/web/dist`) contains:
+
+* `index.html` (thin shell, cache-busted as `no-cache` in Nginx)
+* `/assets/*` (shell chunks)
+* `/widgets/<widget-id>.js` (self-hosted widget bundles)
+
+### Docker
+
+* `Dockerfile.dev` runs `npm ci`, creates `/public/widgets` for dev, and exposes Vite on `5173`.
+* `DockerfileDeploy` runs `npm ci`, executes the full build, copies both `/dist` and `/dist/widgets` into the image, and uses the custom Nginx config.
+* `nginx.conf` differentiates caching:
+  * `/index.html` → `Cache-Control: no-cache`
+  * `/widgets/*` and `/assets/*` → `Cache-Control: public,max-age=31536000,immutable`
 
 
 ---

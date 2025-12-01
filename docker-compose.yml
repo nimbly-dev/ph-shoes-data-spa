@@ -1,45 +1,25 @@
 version: '3.9'
 
 services:
-  ph_shoes_backend:
-    build:
-      context: ./ph-shoes-backend
-      dockerfile: DockerfileDev
-    image: ph-shoes-backend:dev
-    env_file:
-      - ./ph-shoes-backend/.env
-    container_name: ph-shoes-backend
+  ph_shoes_web:
+    image: node:20
+    container_name: ph-shoes-web
+    working_dir: /workspace
     volumes:
-      - ./ph-shoes-backend:/app
-      - ~/.m2:/root/.m2
-    working_dir: /app
-    ports:
-      - '8080:8080'
-    command: >
-      bash -lc "
-        mvn clean compile -q &&
-        mvn spring-boot:run \
-          -Dspring-boot.run.profiles=dev \
-          -Dspring-boot.run.fork=false \
-          -Dspring-boot.run.jvmArguments=\"${JAVA_TOOL_OPTIONS}\"
-      "
-
-  ph_shoes_frontend:
-    build:
-      context: ./ph-shoes-frontend
-      dockerfile: Dockerfile.dev
-    image: ph-shoes-frontend:dev
-    container_name: ph-shoes-frontend
-    volumes:
-      - ./ph-shoes-frontend:/app:cached
-      - phshoes_frontend_node_modules:/app/node_modules
+      - .:/workspace
+      - phshoes_root_node_modules:/workspace/node_modules
+      - phshoes_app_node_modules:/workspace/apps/web/node_modules
     ports:
       - '5173:5173'
     environment:
-      CHOKIDAR_USEPOLLING: "true"
-    depends_on:
-      - ph_shoes_backend
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+      CHOKIDAR_USEPOLLING: 'true'
+      NODE_ENV: development
+    command: >
+      bash -lc "
+        npm install &&
+        npm run dev --workspace apps/web -- --host 0.0.0.0 --port 5173
+      "
 
 volumes:
-  phshoes_frontend_node_modules:
+  phshoes_root_node_modules:
+  phshoes_app_node_modules:

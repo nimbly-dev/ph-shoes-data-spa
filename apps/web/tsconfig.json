@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@commons/services/*": ["../../packages/commons-service/src/services/*"],
+      "@commons/types/*": ["../../packages/commons-service/src/types/*"],
+      "@widget-runtime": ["../../packages/widget-runtime/src/index.ts"],
+      "@widget-runtime/*": ["../../packages/widget-runtime/src/*"],
+      "@widgets/alerts-center": ["../../packages/widgets/alerts-center/src/index.ts"],
+      "@widgets/alerts-center/*": ["../../packages/widgets/alerts-center/src/*"],
+      "@widgets/alert-editor": ["../../packages/widgets/alert-editor/src/index.ts"],
+      "@widgets/alert-editor/*": ["../../packages/widgets/alert-editor/src/*"]
+    }
+  },
+  "include": ["src", "env.d.ts", "src/react-date-range.d.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
