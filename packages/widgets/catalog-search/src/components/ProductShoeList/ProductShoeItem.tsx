@@ -62,18 +62,29 @@ export const ProductShoeItem: React.FC<Props> = ({ shoe, onAlert, isAlerted }) =
           <Tooltip title={isAlerted ? 'Alert set' : 'Set alert'}>
             <IconButton
               size="small"
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                bgcolor: isAlerted ? 'rgba(46, 204, 113, 0.18)' : 'rgba(255,255,255,0.85)',
-                color: isAlerted ? 'success.main' : 'inherit',
-                boxShadow: isAlerted ? '0 0 0 6px rgba(46,204,113,0.12)' : 'none',
-                transition: 'all .2s ease',
-                '&:hover': {
-                  bgcolor: isAlerted ? 'rgba(46, 204, 113, 0.24)' : 'rgba(255,255,255,1)',
-                  boxShadow: isAlerted ? '0 0 0 8px rgba(46,204,113,0.16)' : 'none',
-                },
+              sx={(theme) => {
+                const isDark = theme.palette.mode === 'dark';
+                const idleBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)';
+                const idleColor = isDark ? theme.palette.common.white : theme.palette.text.primary;
+                const idleBorder = isDark ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(0,0,0,0.05)';
+                const idleHoverBg = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,1)';
+
+                return {
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  color: isAlerted ? theme.palette.success.main : idleColor,
+                  bgcolor: isAlerted ? 'rgba(46, 204, 113, 0.18)' : idleBg,
+                  border: isAlerted ? '1px solid rgba(46,204,113,0.4)' : idleBorder,
+                  boxShadow: isAlerted ? '0 0 0 6px rgba(46,204,113,0.12)' : '0 4px 10px rgba(0,0,0,0.08)',
+                  transition: 'all .2s ease',
+                  '&:hover': {
+                    bgcolor: isAlerted ? 'rgba(46, 204, 113, 0.24)' : idleHoverBg,
+                    boxShadow: isAlerted
+                      ? '0 0 0 8px rgba(46,204,113,0.16)'
+                      : '0 6px 12px rgba(0,0,0,0.12)',
+                  },
+                };
               }}
               onClick={(e) => {
                 e.preventDefault();
