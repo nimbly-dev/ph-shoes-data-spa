@@ -88,6 +88,7 @@ export default function TopNav({
           sx={{
             gap: 1,
             minHeight: 64,
+            flexWrap: 'wrap',
             alignItems: 'center',          // ← vertically center all children
           }}
         >
@@ -162,6 +163,16 @@ export default function TopNav({
               </IconButton>
             )}
           </Box>
+
+          {isDownMd && (
+            <Box sx={{ width: '100%', mt: 1 }}>
+              <AISearch
+                activeQuery={activeQuery}
+                onSearch={onSearch}
+                onClear={onClear}
+              />
+            </Box>
+          )}
         </Toolbar>
       </Container>
     </AppBar>
