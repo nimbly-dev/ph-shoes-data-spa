@@ -70,7 +70,7 @@ export default function TopNav({
 
   return (
     <AppBar
-      position="sticky"
+      position={isDownMd ? 'static' : 'sticky'}
       elevation={0}
       sx={{
         bgcolor: 'background.paper',

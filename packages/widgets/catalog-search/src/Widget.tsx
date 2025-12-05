@@ -66,9 +66,26 @@ export const CatalogSearchWidget: React.FC<CatalogSearchWidgetProps> = ({
   return (
     <>
       {isMobile && (
-        <Button startIcon={<FilterList />} onClick={onOpenDrawer} sx={{ my: 2 }}>
-          Filters
-        </Button>
+        <Box
+          sx={(theme) => ({
+            position: 'sticky',
+            top: 0,
+            zIndex: theme.zIndex.appBar - 1,
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            boxShadow: `0 2px 6px rgba(0,0,0,${theme.palette.mode === 'dark' ? 0.6 : 0.08})`,
+            width: `calc(100% + ${theme.spacing(4)})`,
+            ml: `-${theme.spacing(2)}`,
+            mr: `-${theme.spacing(2)}`,
+            px: theme.spacing(2),
+            py: 1,
+            mb: 2,
+          })}
+        >
+          <Button startIcon={<FilterList />} onClick={onOpenDrawer} fullWidth sx={{ borderRadius: 999 }}>
+            Filters
+          </Button>
+        </Box>
       )}
 
       {isMobile && (
