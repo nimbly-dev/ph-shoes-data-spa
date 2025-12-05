@@ -23,7 +23,6 @@ export default defineConfig(({ mode }) => {
         '@widgets/alerts-center': path.resolve(__dirname, '../..', 'packages/widgets/alerts-center/src'),
         '@widgets/alert-editor': path.resolve(__dirname, '../..', 'packages/widgets/alert-editor/src'),
         '@widgets/service-status': path.resolve(__dirname, '../..', 'packages/widgets/service-status/src'),
-        '@widgets/settings-toggles': path.resolve(__dirname, '../..', 'packages/widgets/settings-toggles/src'),
         '@widgets/auth-gate': path.resolve(__dirname, '../..', 'packages/widgets/auth-gate/src'),
         '@widgets/account-settings': path.resolve(__dirname, '../..', 'packages/widgets/account-settings/src'),
         '@widgets/catalog-search': path.resolve(__dirname, '../..', 'packages/widgets/catalog-search/src'),

@@ -2,9 +2,7 @@
 import React, { Suspense, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  Button,
   Container,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -26,7 +24,6 @@ import { widgetRegistry } from './shell/widgetRegistry';
 const AlertsCenterWidget = widgetRegistry['alerts-center'];
 const AlertEditorWidget = widgetRegistry['alert-editor'];
 const ServiceStatusWidget = widgetRegistry['service-status'];
-const SettingsTogglesWidget = widgetRegistry['settings-toggles'];
 const AuthGateWidget = widgetRegistry['auth-gate'];
 const AccountSettingsWidget = widgetRegistry['account-settings'];
 const CatalogSearchWidget = widgetRegistry['catalog-search'];
@@ -43,8 +40,6 @@ export default function App() {
     page,
     pageSize,
     drawerOpen,
-    settingsOpen,
-    useVectorFallback,
     handleDraftChange,
     handleApplyFilters,
     handleResetFilters,
@@ -52,9 +47,6 @@ export default function App() {
     handleAiClear,
     openDrawer,
     closeDrawer,
-    openSettings,
-    closeSettings,
-    setUseVectorFallback,
     setPage,
   } = useProductSearchControls(isMobile);
   
@@ -201,7 +193,6 @@ const handleAccountDeleted = async () => {
         if (widgetId === 'alerts-center') setAlertsDrawerOpen(true);
         if (widgetId === 'alert-editor') setAlertModalOpen(true);
         if (widgetId === 'service-status') setStatusDialogOpen(true);
-        if (widgetId === 'settings-toggles') openSettings();
         if (widgetId === 'auth-gate') setLoginOpen(true);
         if (widgetId === 'account-settings') setAccountSettingsOpen(true);
         if (widgetId === 'catalog-search') openDrawer();
@@ -210,13 +201,12 @@ const handleAccountDeleted = async () => {
         if (widgetId === 'alerts-center') setAlertsDrawerOpen(false);
         if (widgetId === 'alert-editor') setAlertModalOpen(false);
         if (widgetId === 'service-status') setStatusDialogOpen(false);
-        if (widgetId === 'settings-toggles') closeSettings();
         if (widgetId === 'auth-gate') setLoginOpen(false);
         if (widgetId === 'account-settings') setAccountSettingsOpen(false);
         if (widgetId === 'catalog-search') closeDrawer();
       },
     }),
-    [closeDrawer, closeSettings, openDrawer, openSettings],
+    [closeDrawer, openDrawer],
   );
 
   const handleCloseAlertModal = () => {
@@ -235,7 +225,6 @@ const handleAccountDeleted = async () => {
         activeQuery={aiQuery}
         onSearch={handleAiSearch}
         onClear={handleAiClear}
-        onOpenSettings={openSettings}
         onOpenNotifications={() => setAlertsDrawerOpen(true)}
         onOpenAccount={handleAccountClick}
         onOpenStatus={() => setStatusDialogOpen(true)}
@@ -252,17 +241,6 @@ const handleAccountDeleted = async () => {
           refreshing={refreshingServiceStatuses}
           onRefresh={refreshServiceStatuses}
           cooldownMsLeft={serviceStatusCooldownMs}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <SettingsTogglesWidget
-          widgetId="settings-toggles"
-          shellApi={widgetShellApi}
-          open={settingsOpen}
-          useVector={useVectorFallback}
-          onChange={setUseVectorFallback}
-          onClose={closeSettings}
         />
       </Suspense>
 
@@ -285,7 +263,6 @@ const handleAccountDeleted = async () => {
             showingAI={showingAI}
             draftFilters={draftFilters}
             activeFilters={activeFilters}
-            useVector={useVectorFallback}
             page={page}
             pageSize={pageSize}
             alertedProductIds={alertedProductIds}

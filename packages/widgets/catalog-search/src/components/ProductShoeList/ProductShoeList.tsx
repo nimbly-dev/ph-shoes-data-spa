@@ -10,7 +10,6 @@ import type { ProductShoe } from '@commons/types/ProductShoe';
 interface Props {
   aiQuery: string;
   manualFilters: UIProductFilters;
-  useVector: boolean;
   page: number;
   pageSize: number;
   onPageChange: (newPage: number) => void;
@@ -21,7 +20,6 @@ interface Props {
 export const ProductShoeList: React.FC<Props> = ({
   aiQuery,
   manualFilters,
-  useVector,
   page,
   pageSize,
   onPageChange,
@@ -34,7 +32,7 @@ export const ProductShoeList: React.FC<Props> = ({
     error: errorAi,
     rawResponse: aiRaw,
   } =
-    useShoesByAI(aiQuery, page, pageSize, useVector);
+    useShoesByAI(aiQuery, page, pageSize);
 
   const { data: manualData, loading: loadingManual, error: errorManual }:
     UseShoesByFilterResult = useShoesByFilter(manualFilters, page, pageSize);

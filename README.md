@@ -96,7 +96,7 @@ npm run build
 
 `npm run build` executes two steps:
 
-1. Builds **all widgets** (alerts-center, alert-editor, catalog-search, auth-gate, account-settings, settings-toggles, service-status) into `packages/widgets/*/dist/<widget>.js`.
+1. Builds **all widgets** (alerts-center, alert-editor, catalog-search, auth-gate, account-settings, service-status) into `packages/widgets/*/dist/<widget>.js`.
 2. Builds the shell (`apps/web`) and copies each widget bundle into `apps/web/dist/widgets/`.
 
 The final build output (`apps/web/dist`) contains:
