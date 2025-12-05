@@ -9,8 +9,6 @@ export type ProductSearchControls = {
   page: number;
   pageSize: number;
   drawerOpen: boolean;
-  settingsOpen: boolean;
-  useVectorFallback: boolean;
   handleDraftChange: (next: UIProductFilters) => void;
   handleApplyFilters: () => void;
   handleResetFilters: () => void;
@@ -18,9 +16,6 @@ export type ProductSearchControls = {
   handleAiClear: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
-  openSettings: () => void;
-  closeSettings: () => void;
-  setUseVectorFallback: Dispatch<SetStateAction<boolean>>;
   setPage: Dispatch<SetStateAction<number>>;
 };
 
@@ -53,8 +48,6 @@ export function useProductSearchControls(isMobile: boolean): ProductSearchContro
   const showingAI = aiQuery.trim().length > 0;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [useVectorFallback, setUseVectorFallback] = useState(false);
 
   const suppressManualChangeRef = useRef(false);
   const releaseManualChangeTimeout = useRef<number | null>(null);
@@ -141,9 +134,6 @@ export function useProductSearchControls(isMobile: boolean): ProductSearchContro
 
   const openDrawer = () => setDrawerOpen(true);
   const closeDrawer = () => setDrawerOpen(false);
-  const openSettings = () => setSettingsOpen(true);
-  const closeSettings = () => setSettingsOpen(false);
-
   return {
     draftFilters,
     activeFilters,
@@ -152,8 +142,6 @@ export function useProductSearchControls(isMobile: boolean): ProductSearchContro
     page,
     pageSize,
     drawerOpen,
-    settingsOpen,
-    useVectorFallback,
     handleDraftChange,
     handleApplyFilters,
     handleResetFilters,
@@ -161,9 +149,6 @@ export function useProductSearchControls(isMobile: boolean): ProductSearchContro
     handleAiClear,
     openDrawer,
     closeDrawer,
-    openSettings,
-    closeSettings,
-    setUseVectorFallback,
     setPage,
   };
 }

@@ -51,7 +51,6 @@ export async function fetchShoesAI(
   nlQuery: string,
   page: number,
   size: number,
-  useVector: boolean
 ): Promise<TextSearchResponse> {
   if (!AI_QUERY_REGEX.test(nlQuery)) {
     return Promise.reject(new Error(
@@ -62,7 +61,7 @@ export async function fetchShoesAI(
   try {
     const response = await textSearchClient.get<TextSearchResponse>(
       '/api/v1/search/fact-product-shoes',
-      { params: { q: nlQuery, page, size, useVector } },
+      { params: { q: nlQuery, page, size } },
     );
     return response.data;
   } catch (err: any) {

@@ -14,7 +14,6 @@ export const useShoesByAI = (
   nlQuery: string,
   page: number,
   size: number,
-  useVector: boolean    // ← still accepted, but NOT in deps
 ): UseShoesAIResult => {
   const [data, setData]       = useState<Page<ProductShoe>>({
     content: [],
@@ -53,8 +52,7 @@ export const useShoesByAI = (
     setLoading(true);
     setError(null);
 
-    // Calls fetchShoesAI with the current useVector value
-    fetchShoesAI(nlQuery.trim(), page, size, useVector)
+    fetchShoesAI(nlQuery.trim(), page, size)
       .then((response) => {
         setRawResponse(response);
         const normalized = adaptResponseToPage(response, page, size);
@@ -70,7 +68,6 @@ export const useShoesByAI = (
     nlQuery,  // ← only retrigger when query, page or size changes
     page,
     size,
-    // NOTE: useVector is intentionally omitted
   ]);
 
   return { data, loading, error, rawResponse };

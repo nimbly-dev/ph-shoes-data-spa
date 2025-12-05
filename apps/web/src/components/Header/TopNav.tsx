@@ -11,7 +11,6 @@ import {
   useTheme,
 } from '@mui/material';
 import {
-  Settings,
   NotificationsNone,
   AccountCircle,
   Brightness4,
@@ -31,7 +30,6 @@ type Props = {
   onClear: () => void;
 
   // optional actions
-  onOpenSettings?: () => void;
   onOpenNotifications?: (anchor?: HTMLElement) => void;
   onOpenAccount?: (anchor: HTMLElement) => void;
   onOpenStatus?: () => void;
@@ -50,7 +48,6 @@ export default function TopNav({
   onSearch,
   onClear,
 
-  onOpenSettings,
   onOpenNotifications,
   onOpenAccount,
   onOpenStatus,
@@ -120,11 +117,6 @@ export default function TopNav({
 
           {/* Actions (right) */}
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
-            {onOpenSettings && (
-              <IconButton size="small" onClick={onOpenSettings} aria-label="Settings">
-                <Settings />
-              </IconButton>
-            )}
 
             <IconButton size="small" onClick={onToggleMode} aria-label="Toggle theme">
               {mode === 'light' ? <Brightness4 /> : <Brightness7 />}

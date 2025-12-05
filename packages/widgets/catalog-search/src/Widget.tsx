@@ -20,7 +20,6 @@ export type CatalogSearchWidgetProps = WidgetRuntimeProps & {
   showingAI: boolean;
   draftFilters: UIProductFilters;
   activeFilters: UIProductFilters;
-  useVector: boolean;
   page: number;
   pageSize: number;
   alertedProductIds: Set<string>;
@@ -40,7 +39,6 @@ export const CatalogSearchWidget: React.FC<CatalogSearchWidgetProps> = ({
   showingAI,
   draftFilters,
   activeFilters,
-  useVector,
   page,
   pageSize,
   alertedProductIds,
@@ -55,7 +53,6 @@ export const CatalogSearchWidget: React.FC<CatalogSearchWidgetProps> = ({
   const listProps = {
     aiQuery: showingAI ? aiQuery : '',
     manualFilters: showingAI ? {} : activeFilters,
-    useVector,
     page,
     pageSize,
     onPageChange,
