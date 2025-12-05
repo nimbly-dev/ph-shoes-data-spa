@@ -11,8 +11,22 @@ import { RegisterRequest } from '../types/RegisterRequest';
 
 const STORAGE_KEY = 'phshoes.auth.token';
 
-const BASE_URL = (import.meta as any).env.VITE_USER_ACCOUNTS_API_BASE_URL;
-export const USER_ACCOUNTS_API_BASE_URL: string | undefined = BASE_URL;
+const RAW_BASE_URL = (import.meta as any).env.VITE_USER_ACCOUNTS_API_BASE_URL;
+
+const normalizeBase = (base: string | undefined): string => {
+  if (!base) return '';
+  return base.replace(/\/+$/, '');
+};
+
+const normalizedBaseUrl = normalizeBase(RAW_BASE_URL);
+export const USER_ACCOUNTS_API_BASE_URL: string | undefined = normalizedBaseUrl || undefined;
+const BASE_HAS_API_PREFIX = normalizedBaseUrl.endsWith('/api/v1');
+
+const stripDuplicateApiPrefix = (url?: string): string | undefined => {
+  if (!url || !BASE_HAS_API_PREFIX) return url;
+  if (url === '/api/v1') return '/';
+  return url.replace(/^\/api\/v1/, '/');
+};
 
 export type SubscriptionStatusResponse = {
   email: string;
@@ -20,17 +34,27 @@ export type SubscriptionStatusResponse = {
 };
 
 export const authClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: normalizedBaseUrl || undefined,
   withCredentials: true,
 });
 
 const unauthenticatedClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: normalizedBaseUrl || undefined,
   withCredentials: true,
+});
+
+unauthenticatedClient.interceptors.request.use((config) => {
+  if (typeof config.url === 'string') {
+    config.url = stripDuplicateApiPrefix(config.url);
+  }
+  return config;
 });
 
 // Attach Bearer automatically
 authClient.interceptors.request.use((config) => {
+  if (typeof config.url === 'string') {
+    config.url = stripDuplicateApiPrefix(config.url);
+  }
   const token = getToken();
   if (token) {
     const headers = (config.headers ?? {}) as AxiosRequestHeaders;
@@ -252,25 +276,13 @@ export type EmailPreferences = {
 };
 
 export async function getEmailPreferences(): Promise<EmailPreferences> {
-  try {
-    const { data } = await authClient.get('/api/v1/user-accounts/settings');
-    const payload = (data && typeof data === 'object' ? (data as Record<string, unknown>) : {}) as Record<string, unknown>;
+  const { data } = await authClient.get('/api/v1/user-accounts/settings');
+  const payload = (data && typeof data === 'object' ? (data as Record<string, unknown>) : {}) as Record<string, unknown>;
 
-    const emailSubscribed = readEmailSubscribed(payload);
-    const unsubscribeToken = readUnsubscribeToken(data);
+  const emailSubscribed = readEmailSubscribed(payload);
+  const unsubscribeToken = readUnsubscribeToken(data);
 
-    return { emailSubscribed, unsubscribeToken, settingsPayload: payload };
-  } catch (e) {
-    if (axios.isAxiosError(e) && e.response?.status === 404) {
-      await initializeAccountSettings();
-      const { data } = await authClient.get('/api/v1/user-accounts/settings');
-      const payload = (data && typeof data === 'object' ? (data as Record<string, unknown>) : {}) as Record<string, unknown>;
-      const emailSubscribed = readEmailSubscribed(payload);
-      const unsubscribeToken = readUnsubscribeToken(data);
-      return { emailSubscribed, unsubscribeToken, settingsPayload: payload };
-    }
-    throw e;
-  }
+  return { emailSubscribed, unsubscribeToken, settingsPayload: payload };
 }
 
 async function initializeAccountSettings() {
@@ -299,19 +311,9 @@ export async function updateEmailNotificationPreference(
   setEmailNotificationsFlag(next, enabled);
   const patchSettings = async () => authClient.patch('/api/v1/user-accounts/settings', next);
 
-  try {
-    const { data } = await patchSettings();
-    const payload = (data && typeof data === 'object' ? (data as Record<string, unknown>) : next) as Record<string, unknown>;
-    return payload;
-  } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 404) {
-      await initializeAccountSettings();
-      const { data } = await patchSettings();
-      const payload = (data && typeof data === 'object' ? (data as Record<string, unknown>) : next) as Record<string, unknown>;
-      return payload;
-    }
-    throw err;
-  }
+  const { data } = await patchSettings();
+  const payload = (data && typeof data === 'object' ? (data as Record<string, unknown>) : next) as Record<string, unknown>;
+  return payload;
 }
 
 export async function getSubscriptionStatus(email: string): Promise<SubscriptionStatusResponse> {

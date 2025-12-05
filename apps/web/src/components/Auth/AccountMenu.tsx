@@ -38,7 +38,12 @@ export const AccountMenu: React.FC<Props> = ({ anchorEl, onClose, email, onLogou
 
         <Stack direction="column" spacing={1}>
           {onOpenSettings && (
-            <Button variant="text" onClick={clickSettings} fullWidth>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={clickSettings}
+              fullWidth
+            >
               Settings
             </Button>
           )}
