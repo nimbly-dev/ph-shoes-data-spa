@@ -1,0 +1,61 @@
+name: Deploy Frontend SPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Optional image tag (defaults to commit SHA)"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+      IMAGE_TAG: ${{ github.event.inputs.image_tag != '' && github.event.inputs.image_tag || github.sha }}
+      VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+      VITE_USER_ACCOUNTS_API_BASE_URL: ${{ secrets.VITE_USER_ACCOUNTS_API_BASE_URL }}
+      VITE_CATALOG_API_BASE_URL: ${{ secrets.VITE_CATALOG_API_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR Public
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build Docker image
+        working-directory: apps/web
+        run: |
+          docker build \
+            -f DockerfileDeploy \
+            --build-arg VITE_API_BASE_URL="$VITE_API_BASE_URL" \
+            --build-arg VITE_USER_ACCOUNTS_API_BASE_URL="$VITE_USER_ACCOUNTS_API_BASE_URL" \
+            --build-arg VITE_CATALOG_API_BASE_URL="$VITE_CATALOG_API_BASE_URL" \
+            -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" .
+
+      - name: Push image to ECR Public
+        run: |
+          docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"
+
+      - name: Output image URI
+        run: echo "image_uri=$ECR_REPOSITORY_URI:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+        id: image

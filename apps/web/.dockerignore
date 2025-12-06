@@ -1,6 +1,25 @@
+# Dependencies & build artifacts
 node_modules
+dist
+.turbo
+
+# Git & tooling
 .git
 .gitignore
+.idea
+.vscode
 npm-debug.log*
-Dockerfile*
+
+# Local env/secrets
+.env
+.env.*
+.envrc
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+
+# Local docker/compose helpers
 docker-compose*.yml
+Dockerfile.dev
