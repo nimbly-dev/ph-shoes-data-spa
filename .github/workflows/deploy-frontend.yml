@@ -34,10 +34,9 @@ jobs:
           registry-type: public
 
       - name: Build Docker image
-        working-directory: apps/web
         run: |
           docker build \
-            -f DockerfileDeploy \
+            -f apps/web/DockerfileDeploy \
             -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" .
 
       - name: Push image to ECR Public
