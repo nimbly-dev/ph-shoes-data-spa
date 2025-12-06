@@ -1,24 +1,20 @@
-name: Deploy Frontend SPA
+name: Build & Publish Frontend SPA
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: "Optional image tag (defaults to commit SHA)"
-        required: false
-        default: ""
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  build-and-push:
+  build-and-publish:
     runs-on: ubuntu-latest
-
     env:
-      ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-      IMAGE_TAG: ${{ github.event.inputs.image_tag != '' && github.event.inputs.image_tag || github.sha }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }} # public ECR repo for SPA
+      IMAGE_TAG: ${{ github.sha }}
+      GH_ACTOR: ${{ secrets.GH_ACTOR }}
+      GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
     steps:
       - name: Checkout
@@ -29,10 +25,9 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR Public
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
@@ -48,15 +43,15 @@ jobs:
         run: |
           docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"
 
-      - name: Trigger infrastructure deploy in services-automation
+      - name: Trigger central deploy (services-automation)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTOMATION_REPO_TOKEN: ${{ secrets.AUTOMATION_REPO_TOKEN }}
           TARGET_REPO: ${{ github.repository_owner }}/ph-shoes-services-automation
           IMAGE_URI: ${{ env.ECR_REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
         run: |
-          echo "Triggering deploy for $IMAGE_URI in $TARGET_REPO"
+          echo "Triggering deploy-service for frontend with image $IMAGE_URI in $TARGET_REPO"
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Authorization: Bearer $AUTOMATION_REPO_TOKEN" \
             https://api.github.com/repos/$TARGET_REPO/dispatches \
-            -d "{\"event_type\":\"deploy-frontend\",\"client_payload\":{\"image_uri\":\"$IMAGE_URI\"}}"
+            -d "{\"event_type\":\"deploy-service\",\"client_payload\":{\"service\":\"frontend\",\"image_uri\":\"$IMAGE_URI\"}}"
