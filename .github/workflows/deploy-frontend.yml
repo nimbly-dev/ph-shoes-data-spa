@@ -50,8 +50,17 @@ jobs:
           IMAGE_URI: ${{ env.ECR_REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
         run: |
           echo "Triggering deploy-service for frontend with image $IMAGE_URI in $TARGET_REPO"
-          curl -X POST \
+          set -e
+          response=$(mktemp)
+          status=$(curl -sS -w "%{http_code}" -o "$response" \
+            -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $AUTOMATION_REPO_TOKEN" \
             https://api.github.com/repos/$TARGET_REPO/dispatches \
-            -d "{\"event_type\":\"deploy-service\",\"client_payload\":{\"service\":\"frontend\",\"image_uri\":\"$IMAGE_URI\"}}"
+            -d "{\"event_type\":\"deploy-service\",\"client_payload\":{\"service\":\"frontend\",\"image_uri\":\"$IMAGE_URI\"}}")
+          echo "Dispatch response ($status):"
+          cat "$response"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error ::Failed to trigger deploy-service workflow"
+            exit 1
+          fi
