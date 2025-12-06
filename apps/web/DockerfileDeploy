@@ -1,8 +1,9 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Install dependencies without relying on a committed lockfile
+COPY package.json ./
+RUN npm install
 
 COPY . .
 ARG VITE_API_BASE_URL
