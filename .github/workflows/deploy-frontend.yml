@@ -51,7 +51,7 @@ jobs:
           DIGESTS=$(aws ecr-public describe-images \
             --region "$AWS_REGION" \
             --repository-name "$REPO_NAME" \
-            --query 'imageDetails[?length(imageTags)==`0`].imageDigest' \
+            --query 'imageDetails[?imageTags==null].imageDigest' \
             --output text)
           if [ -z "$DIGESTS" ] || [ "$DIGESTS" = "None" ]; then
             echo "No untagged images found."
