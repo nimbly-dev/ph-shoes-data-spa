@@ -10,7 +10,8 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      # ECR Public is regional to us-east-1
+      AWS_REGION: us-east-1
       ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }} # public ECR repo for SPA
       IMAGE_TAG: ${{ github.sha }}
       GH_ACTOR: ${{ secrets.GH_ACTOR }}
