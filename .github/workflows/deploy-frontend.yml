@@ -9,11 +9,8 @@ on:
         default: ""
 
 permissions:
-  id-token: write
   contents: read
-
-env:
-  AWS_REGION: ap-southeast-1
+  id-token: write
 
 jobs:
   build-and-push:
@@ -27,11 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR Public
         id: login-ecr
@@ -50,6 +48,15 @@ jobs:
         run: |
           docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"
 
-      - name: Output image URI
-        run: echo "image_uri=$ECR_REPOSITORY_URI:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
-        id: image
+      - name: Trigger infrastructure deploy in services-automation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_REPO: ${{ github.repository_owner }}/ph-shoes-services-automation
+          IMAGE_URI: ${{ env.ECR_REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
+        run: |
+          echo "Triggering deploy for $IMAGE_URI in $TARGET_REPO"
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            https://api.github.com/repos/$TARGET_REPO/dispatches \
+            -d "{\"event_type\":\"deploy-frontend\",\"client_payload\":{\"image_uri\":\"$IMAGE_URI\"}}"
