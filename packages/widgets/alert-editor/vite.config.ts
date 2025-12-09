@@ -5,7 +5,7 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react()],
   define: {
-    'process.env': '{}',
+    'process.env': {},
   },
   resolve: {
     alias: {
