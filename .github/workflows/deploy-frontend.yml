@@ -37,11 +37,16 @@ jobs:
         run: |
           docker build \
             -f apps/web/DockerfileDeploy \
-            -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" .
+            --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL }}" \
+            --build-arg VITE_USER_ACCOUNTS_API_BASE_URL="${{ secrets.VITE_USER_ACCOUNTS_API_BASE_URL }}" \
+            --build-arg VITE_CATALOG_API_BASE_URL="${{ secrets.VITE_CATALOG_API_BASE_URL }}" \
+            -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" \
+            -t "$ECR_REPOSITORY_URI:latest" .
 
       - name: Push image to ECR Public
         run: |
           docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"
+          docker push "$ECR_REPOSITORY_URI:latest"
 
       - name: Remove untagged images from ECR Public
         run: |
