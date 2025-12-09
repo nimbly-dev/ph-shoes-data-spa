@@ -1,9 +1,13 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const projectRoot = path.resolve(process.cwd(), '..');
+// When run from workspace root, cwd is /repo, when run from apps/web, cwd is /repo/apps/web
+const isWorkspaceRoot = process.cwd().endsWith('/repo') || !process.cwd().includes('/apps/');
+const projectRoot = isWorkspaceRoot ? process.cwd() : path.resolve(process.cwd(), '../..');
 const widgetsDir = path.resolve(projectRoot, 'packages', 'widgets');
-const distWidgetsDir = path.resolve(process.cwd(), 'dist', 'widgets');
+const distWidgetsDir = isWorkspaceRoot 
+  ? path.resolve(projectRoot, 'apps', 'web', 'dist', 'widgets')
+  : path.resolve(process.cwd(), 'dist', 'widgets');
 
 async function fileExists(dir) {
   try {
