@@ -15,16 +15,8 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_USER_ACCOUNTS_API_BASE_URL=$VITE_USER_ACCOUNTS_API_BASE_URL
 ENV VITE_CATALOG_API_BASE_URL=$VITE_CATALOG_API_BASE_URL
 
-# Build widgets first
-RUN npm run build --workspace @ph-shoes/widget-service-status
-RUN npm run build --workspace @ph-shoes/widget-catalog-search
-RUN npm run build --workspace @ph-shoes/widget-alerts-center
-RUN npm run build --workspace @ph-shoes/widget-alert-editor
-RUN npm run build --workspace @ph-shoes/widget-auth-gate
-RUN npm run build --workspace @ph-shoes/widget-account-settings
-
-# Build web app (copies widgets)
-RUN npm run build --workspace apps/web
+# Build all widgets and web app
+RUN npm run build
 
 FROM nginx:stable-alpine
 WORKDIR /usr/share/nginx/html
