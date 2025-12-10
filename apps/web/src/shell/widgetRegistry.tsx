@@ -7,12 +7,9 @@ const WidgetErrorFallback: React.FC<{ widgetId: string }> = ({ widgetId }) => (
 );
 
 const loadWidget = <T extends React.ComponentType<any>>(widgetId: string, devLoader: () => Promise<{ default: T }>) => {
+  // Temporarily disabled due to React conflicts
   return React.lazy(() => 
-    (import.meta.env.DEV ? devLoader() : import(/* @vite-ignore */ `/widgets/${widgetId}.js`))
-      .catch((error) => {
-        console.error(`Failed to load widget "${widgetId}":`, error);
-        return { default: (() => <WidgetErrorFallback widgetId={widgetId} />) as T };
-      })
+    Promise.resolve({ default: (() => <WidgetErrorFallback widgetId={widgetId} />) as T })
   );
 };
 
