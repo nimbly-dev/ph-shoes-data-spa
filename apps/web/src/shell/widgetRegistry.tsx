@@ -1,7 +1,19 @@
 import React from 'react';
 
+const WidgetErrorFallback: React.FC<{ widgetId: string }> = ({ widgetId }) => (
+  <div style={{ padding: '16px', color: '#d32f2f', border: '1px solid #d32f2f', borderRadius: '4px', margin: '8px' }}>
+    Widget "{widgetId}" failed to load
+  </div>
+);
+
 const loadWidget = <T extends React.ComponentType<any>>(widgetId: string, devLoader: () => Promise<{ default: T }>) => {
-  return React.lazy(() => (import.meta.env.DEV ? devLoader() : import(/* @vite-ignore */ `/widgets/${widgetId}.js`)));
+  return React.lazy(() => 
+    (import.meta.env.DEV ? devLoader() : import(/* @vite-ignore */ `/widgets/${widgetId}.js`))
+      .catch((error) => {
+        console.error(`Failed to load widget "${widgetId}":`, error);
+        return { default: (() => <WidgetErrorFallback widgetId={widgetId} />) as T };
+      })
+  );
 };
 
 const AlertsCenterWidget = loadWidget('alerts-center', () => import('@widgets/alerts-center'));
