@@ -25,5 +25,8 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'auth-gate.js',
     },
+    rollupOptions: {
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
+    },
   },
 });

@@ -25,5 +25,8 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'alerts-center.js',
     },
+    rollupOptions: {
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
+    },
   },
 });
