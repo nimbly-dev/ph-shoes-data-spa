@@ -19,20 +19,12 @@ ENV VITE_CATALOG_API_BASE_URL=$VITE_CATALOG_API_BASE_URL
 ENV VITE_TEXT_SEARCH_API_BASE_URL=$VITE_TEXT_SEARCH_API_BASE_URL
 ENV VITE_ALERTS_API_BASE_URL=$VITE_ALERTS_API_BASE_URL
 
-# Build widgets explicitly
-RUN npm run build:widgets
-
-# Verify widgets were built
-RUN echo "Checking widget builds..." && \
-    ls -la /repo/packages/widgets/*/dist/*.js || echo "Widget builds missing!"
-
-# Build web app
+# Build web app (widgets disabled)
 RUN npm run build:web
 
 # Verify final output
 RUN echo "Final dist contents:" && \
-    ls -la /repo/apps/web/dist/ && \
-    ls -la /repo/apps/web/dist/widgets/ || echo "Widgets directory missing!"
+    ls -la /repo/apps/web/dist/
 
 FROM nginx:stable-alpine
 WORKDIR /usr/share/nginx/html
