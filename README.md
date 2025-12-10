@@ -71,6 +71,8 @@ The Vite frontend consumes its backend services via `.env` entries:
 * `VITE_API_BASE_URL` — legacy monolith (kept for fallback / backwards compatibility).
 * `VITE_USER_ACCOUNTS_API_BASE_URL` — user accounts service (`http://localhost:8082` locally).
 * `VITE_CATALOG_API_BASE_URL` — **new** catalog service exposed by `ph-shoes-catalog-service` (`http://localhost:8083` locally).
+* `VITE_TEXT_SEARCH_API_BASE_URL` — AI/text-search endpoint (falls back to catalog if omitted).
+* `VITE_ALERTS_API_BASE_URL` — price-alerts API (defaults to Render deployment when missing).
 
 ---
 

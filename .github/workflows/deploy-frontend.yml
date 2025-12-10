@@ -40,6 +40,8 @@ jobs:
             --build-arg VITE_API_BASE_URL="${{ secrets.VITE_API_BASE_URL }}" \
             --build-arg VITE_USER_ACCOUNTS_API_BASE_URL="${{ secrets.VITE_USER_ACCOUNTS_API_BASE_URL }}" \
             --build-arg VITE_CATALOG_API_BASE_URL="${{ secrets.VITE_CATALOG_API_BASE_URL }}" \
+            --build-arg VITE_TEXT_SEARCH_API_BASE_URL="${{ secrets.VITE_TEXT_SEARCH_API_BASE_URL }}" \
+            --build-arg VITE_ALERTS_API_BASE_URL="${{ secrets.VITE_ALERTS_API_BASE_URL }}" \
             --no-cache \
             -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" .
 
