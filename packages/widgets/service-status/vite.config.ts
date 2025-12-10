@@ -25,8 +25,5 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'service-status.js',
     },
-    rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
-    },
   },
 });

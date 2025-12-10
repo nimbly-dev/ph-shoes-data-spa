@@ -25,9 +25,6 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'catalog-search.js',
     },
-    rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
-    },
   },
 });
  
