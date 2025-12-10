@@ -19,7 +19,7 @@ ENV VITE_CATALOG_API_BASE_URL=$VITE_CATALOG_API_BASE_URL
 ENV VITE_TEXT_SEARCH_API_BASE_URL=$VITE_TEXT_SEARCH_API_BASE_URL
 ENV VITE_ALERTS_API_BASE_URL=$VITE_ALERTS_API_BASE_URL
 
-# Build web app (widgets disabled)
+# Build web app (widgets bundled in main app)
 RUN npm run build:web
 
 # Verify final output
