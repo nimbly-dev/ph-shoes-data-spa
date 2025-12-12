@@ -9,9 +9,8 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace apps/web",
-    "build": "npm run build:widgets && npm run build:web",
+    "build": "npm run build:web",
     "build:web": "npm run build --workspace apps/web",
-    "build:widgets": "npm run build --workspace packages/widgets/catalog-search && npm run build --workspace packages/widgets/alerts-center && npm run build --workspace packages/widgets/alert-editor && npm run build --workspace packages/widgets/service-status && npm run build --workspace packages/widgets/auth-gate && npm run build --workspace packages/widgets/account-settings",
     "lint": "npm run lint --workspace apps/web"
   }
 }

@@ -20,6 +20,7 @@ import { useServiceStatuses } from '@commons/hooks/useServiceStatuses';
 import { useAlerts } from '@commons/hooks/useAlerts';
 import { AlertResponse, AlertCreateRequest, AlertUpdateRequest, AlertTarget } from '@commons/types/alerts';
 import { widgetRegistry } from './shell/widgetRegistry';
+import { WidgetErrorBoundary } from './shell/WidgetErrorBoundary';
 
 const AlertsCenterWidget = widgetRegistry['alerts-center'];
 const AlertEditorWidget = widgetRegistry['alert-editor'];
@@ -231,18 +232,20 @@ const handleAccountDeleted = async () => {
         unread={triggeredCount}
         serviceStatuses={serviceStatusEntries}
       />
-      <Suspense fallback={null}>
-        <ServiceStatusWidget
-          widgetId="service-status"
-          shellApi={widgetShellApi}
-          open={statusDialogOpen}
-          onClose={() => setStatusDialogOpen(false)}
-          entries={serviceStatusEntries}
-          refreshing={refreshingServiceStatuses}
-          onRefresh={refreshServiceStatuses}
-          cooldownMsLeft={serviceStatusCooldownMs}
-        />
-      </Suspense>
+      <WidgetErrorBoundary widgetId="service-status">
+        <Suspense fallback={null}>
+          <ServiceStatusWidget
+            widgetId="service-status"
+            shellApi={widgetShellApi}
+            open={statusDialogOpen}
+            onClose={() => setStatusDialogOpen(false)}
+            entries={serviceStatusEntries}
+            refreshing={refreshingServiceStatuses}
+            onRefresh={refreshServiceStatuses}
+            cooldownMsLeft={serviceStatusCooldownMs}
+          />
+        </Suspense>
+      </WidgetErrorBoundary>
 
       <Container disableGutters maxWidth={false} sx={{ width: '100%' }}>
         <Box
@@ -254,42 +257,46 @@ const handleAccountDeleted = async () => {
             pb: 4,
           }}
         >
-          <CatalogSearchWidget
-            widgetId="catalog-search"
-            shellApi={widgetShellApi}
-            isMobile={isMobile}
-            drawerOpen={drawerOpen}
-            aiQuery={aiQuery}
-            showingAI={showingAI}
-            draftFilters={draftFilters}
-            activeFilters={activeFilters}
-            page={page}
-            pageSize={pageSize}
-            alertedProductIds={alertedProductIds}
-            onOpenAlert={(shoe) =>
-              auth.user
-                ? openAlertModal(
-                    {
-                      id: shoe.id,
-                      title: shoe.title,
-                      priceSale: shoe.priceSale,
-                      priceOriginal: shoe.priceOriginal,
-                      brand: shoe.brand,
-                      image: shoe.image,
-                      productImageUrl: (shoe as any).productImageUrl ?? shoe.image,
-                      url: shoe.url,
-                    },
-                    alerts.find((a) => a.productId === shoe.id) ?? null,
-                  )
-                : openLogin()
-            }
-            onDraftChange={handleDraftChange}
-            onApplyFilters={handleApplyFilters}
-            onResetFilters={handleResetFilters}
-            onOpenDrawer={openDrawer}
-            onCloseDrawer={closeDrawer}
-            onPageChange={(newPage) => setPage(newPage)}
-          />
+          <WidgetErrorBoundary widgetId="catalog-search">
+            <Suspense fallback={null}>
+              <CatalogSearchWidget
+                widgetId="catalog-search"
+                shellApi={widgetShellApi}
+                isMobile={isMobile}
+                drawerOpen={drawerOpen}
+                aiQuery={aiQuery}
+                showingAI={showingAI}
+                draftFilters={draftFilters}
+                activeFilters={activeFilters}
+                page={page}
+                pageSize={pageSize}
+                alertedProductIds={alertedProductIds}
+                onOpenAlert={(shoe) =>
+                  auth.user
+                    ? openAlertModal(
+                        {
+                          id: shoe.id,
+                          title: shoe.title,
+                          priceSale: shoe.priceSale,
+                          priceOriginal: shoe.priceOriginal,
+                          brand: shoe.brand,
+                          image: shoe.image,
+                          productImageUrl: (shoe as any).productImageUrl ?? shoe.image,
+                          url: shoe.url,
+                        },
+                        alerts.find((a) => a.productId === shoe.id) ?? null,
+                      )
+                    : openLogin()
+                }
+                onDraftChange={handleDraftChange}
+                onApplyFilters={handleApplyFilters}
+                onResetFilters={handleResetFilters}
+                onOpenDrawer={openDrawer}
+                onCloseDrawer={closeDrawer}
+                onPageChange={(newPage) => setPage(newPage)}
+              />
+            </Suspense>
+          </WidgetErrorBoundary>
 
           {/* Account dropdown (signed-in only) */}
           {auth.user && (
@@ -302,98 +309,106 @@ const handleAccountDeleted = async () => {
             />
           )}
 
-          <Suspense fallback={null}>
-            <AuthGateWidget
-              widgetId="auth-gate"
-              shellApi={widgetShellApi}
-              login={{
-                open: loginOpen,
-                loading: auth.loading,
-                error: auth.error,
-                prefillEmail: loginEmailPrefill,
-                onClose: () => setLoginOpen(false),
-                onLogin: (email, pw) => auth.login(email, pw),
-                onOpenRegister: goToRegister,
-              }}
-              register={{
-                open: registerOpen,
-                onClose: () => setRegisterOpen(false),
-                onRegistered: handleRegistered,
-                onOpenLogin: goToLogin,
-              }}
-              verifyNotice={{
-                open: verifyNoticeOpen,
-                email: verifyEmail,
-                onClose: () => setVerifyNoticeOpen(false),
-              }}
-              verifyResult={{
-                open: verifyResultOpen,
-                email: verifyEmail,
-                title: verifyTitle,
-                message: verifyMsg,
-                status: verifyStatus,
-                onClose: closeVerifyResultDialog,
-                onLogin: openLogin,
-              }}
-            />
-          </Suspense>
+          <WidgetErrorBoundary widgetId="auth-gate">
+            <Suspense fallback={null}>
+              <AuthGateWidget
+                widgetId="auth-gate"
+                shellApi={widgetShellApi}
+                login={{
+                  open: loginOpen,
+                  loading: auth.loading,
+                  error: auth.error,
+                  prefillEmail: loginEmailPrefill,
+                  onClose: () => setLoginOpen(false),
+                  onLogin: (email, pw) => auth.login(email, pw),
+                  onOpenRegister: goToRegister,
+                }}
+                register={{
+                  open: registerOpen,
+                  onClose: () => setRegisterOpen(false),
+                  onRegistered: handleRegistered,
+                  onOpenLogin: goToLogin,
+                }}
+                verifyNotice={{
+                  open: verifyNoticeOpen,
+                  email: verifyEmail,
+                  onClose: () => setVerifyNoticeOpen(false),
+                }}
+                verifyResult={{
+                  open: verifyResultOpen,
+                  email: verifyEmail,
+                  title: verifyTitle,
+                  message: verifyMsg,
+                  status: verifyStatus,
+                  onClose: closeVerifyResultDialog,
+                  onLogin: openLogin,
+                }}
+              />
+            </Suspense>
+          </WidgetErrorBoundary>
 
-          <Suspense fallback={null}>
-            <AccountSettingsWidget
-              widgetId="account-settings"
-              shellApi={widgetShellApi}
-              settingsOpen={accountSettingsOpen}
-              onCloseSettings={() => setAccountSettingsOpen(false)}
-              onAccountDeleted={handleAccountDeleted}
-              email={auth.user?.email}
-              unsubscribeResult={unsubscribeResult}
-              onCloseUnsubscribeResult={() => setUnsubscribeResult(null)}
-            />
-          </Suspense>
+          <WidgetErrorBoundary widgetId="account-settings">
+            <Suspense fallback={null}>
+              <AccountSettingsWidget
+                widgetId="account-settings"
+                shellApi={widgetShellApi}
+                settingsOpen={accountSettingsOpen}
+                onCloseSettings={() => setAccountSettingsOpen(false)}
+                onAccountDeleted={handleAccountDeleted}
+                email={auth.user?.email}
+                unsubscribeResult={unsubscribeResult}
+                onCloseUnsubscribeResult={() => setUnsubscribeResult(null)}
+              />
+            </Suspense>
+          </WidgetErrorBoundary>
 
-          <Suspense fallback={null}>
-            <AlertsCenterWidget
-              widgetId="alerts-center"
-              shellApi={widgetShellApi}
-              open={alertsDrawerOpen}
-              onClose={closeAlertsModal}
-              alerts={alerts}
-              loading={alertsLoading}
-              onRefresh={refreshAlerts}
-              onResetAlert={(a) => handleResetAlert(a.productId)}
-              onDeleteAlert={(a) => handleDeleteAlert(a.productId)}
-              onEditAlert={(a) => {
-                closeAlertsModal();
-                openAlertModal(
-                  {
-                    id: a.productId,
-                    title: a.productName,
-                    priceSale: a.productCurrentPrice ?? 0,
-                    priceOriginal: a.productOriginalPrice ?? a.productCurrentPrice ?? 0,
-                    brand: a.productBrand,
-                    image: a.productImage ?? a.productImageUrl,
-                    productImageUrl: a.productImageUrl ?? a.productImage,
-                    url: a.productUrl,
-                  },
-                  a,
-                  true,
-                );
-              }}
-            />
-          </Suspense>
+          <WidgetErrorBoundary widgetId="alerts-center">
+            <Suspense fallback={null}>
+              <AlertsCenterWidget
+                widgetId="alerts-center"
+                shellApi={widgetShellApi}
+                open={alertsDrawerOpen}
+                onClose={closeAlertsModal}
+                alerts={alerts}
+                loading={alertsLoading}
+                onRefresh={refreshAlerts}
+                onResetAlert={(a) => handleResetAlert(a.productId)}
+                onDeleteAlert={(a) => handleDeleteAlert(a.productId)}
+                onEditAlert={(a) => {
+                  closeAlertsModal();
+                  openAlertModal(
+                    {
+                      id: a.productId,
+                      title: a.productName,
+                      priceSale: a.productCurrentPrice ?? 0,
+                      priceOriginal: a.productOriginalPrice ?? a.productCurrentPrice ?? 0,
+                      brand: a.productBrand,
+                      image: a.productImage ?? a.productImageUrl,
+                      productImageUrl: a.productImageUrl ?? a.productImage,
+                      url: a.productUrl,
+                    },
+                    a,
+                    true,
+                  );
+                }}
+              />
+            </Suspense>
+          </WidgetErrorBoundary>
 
-          <Suspense fallback={null}>
-            <AlertEditorWidget
-              widgetId="alert-editor"
-              shellApi={widgetShellApi}
-              open={alertModalOpen}
-              onClose={handleCloseAlertModal}
-              product={selectedProduct}
-              existingAlert={selectedAlert}
-              onSave={handleSaveAlert}
-              onDelete={handleDeleteAlert}
-            />
-          </Suspense>
+          <WidgetErrorBoundary widgetId="alert-editor">
+            <Suspense fallback={null}>
+              <AlertEditorWidget
+                widgetId="alert-editor"
+                shellApi={widgetShellApi}
+                open={alertModalOpen}
+                onClose={handleCloseAlertModal}
+                product={selectedProduct}
+                existingAlert={selectedAlert}
+                onSave={handleSaveAlert}
+                onDelete={handleDeleteAlert}
+              />
+            </Suspense>
+          </WidgetErrorBoundary>
 
         </Box>
       </Container>

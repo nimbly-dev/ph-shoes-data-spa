@@ -8,9 +8,6 @@ RUN npm ci
 # Bring in the rest of your source
 COPY . .
 
-# Ensure widgets build output exists for dev (Vite serves from memory)
-RUN mkdir -p public/widgets
-
 # Expose Vite’s default dev port
 EXPOSE 5173
 

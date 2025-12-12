@@ -60,7 +60,7 @@ Key ideas:
 
 * `apps/web` owns only routing, layout, and cross-widget orchestration (widget registry, shell context, etc.).
 * Each UI feature (catalog search, alerts, auth gate, account settings, service status, etc.) lives in `packages/widgets/<widget>`.
-* Widgets are built as standalone ES modules and deployed under `/widgets/<widget-id>.js`. The shell lazy-loads them via `React.lazy` + dynamic `import()` in production.
+* Widgets stay in the monorepo, compile as their own entry points, and are lazy-loaded via `React.lazy(() => import('@widgets/<widget-id>'))` in **both** dev and prod so only the necessary chunk ships to the browser.
 * Shared hooks (`useAuth`, `useAlerts`, `useServiceStatuses`, etc.), types, and config live in `packages/commons-service`.
 * Theming (`AppThemeProvider`, light/dark themes) lives in `packages/commons-ui`.
 
@@ -96,24 +96,20 @@ npm run dev   # runs vite dev server for apps/web on port 5173
 npm run build
 ```
 
-`npm run build` executes two steps:
-
-1. Builds **all widgets** (alerts-center, alert-editor, catalog-search, auth-gate, account-settings, service-status) into `packages/widgets/*/dist/<widget>.js`.
-2. Builds the shell (`apps/web`) and copies each widget bundle into `apps/web/dist/widgets/`.
+`npm run build` runs the Vite production build for `apps/web`. Every widget is pulled in through its `@widgets/<id>` import, so Vite code-splits each one into its own chunk automatically—no extra build step or copy phase is required.
 
 The final build output (`apps/web/dist`) contains:
 
 * `index.html` (thin shell, cache-busted as `no-cache` in Nginx)
-* `/assets/*` (shell chunks)
-* `/widgets/<widget-id>.js` (self-hosted widget bundles)
+* `/assets/*` (shell chunks, including lazily loaded widget bundles)
 
 ### Docker
 
-* `Dockerfile.dev` runs `npm ci`, creates `/public/widgets` for dev, and exposes Vite on `5173`.
-* `DockerfileDeploy` runs `npm ci`, executes the full build, copies both `/dist` and `/dist/widgets` into the image, and uses the custom Nginx config.
+* `Dockerfile.dev` runs `npm ci` and exposes Vite on `5173` (widgets refresh via HMR just like any other chunk).
+* `DockerfileDeploy` runs `npm ci`, executes the production build once, copies `/dist` into the image, and uses the custom Nginx config.
 * `nginx.conf` differentiates caching:
   * `/index.html` → `Cache-Control: no-cache`
-  * `/widgets/*` and `/assets/*` → `Cache-Control: public,max-age=31536000,immutable`
+  * `/assets/*` → `Cache-Control: public,max-age=31536000,immutable`
 
 
 ---
