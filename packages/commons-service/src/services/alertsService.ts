@@ -4,18 +4,21 @@ import { AlertCreateRequest, AlertResponse, AlertUpdateRequest } from '../types/
 
 const rawBase = (import.meta as any).env.VITE_ALERTS_API_BASE_URL as string | undefined;
 
+const env = (import.meta as any).env;
+
+const alertsBaseURL = env.VITE_ALERTS_API_BASE_URL ?? env.VITE_API_BASE_URL;
+
+if (!alertsBaseURL) {
+  throw new Error('Alerts API base URL is not configured.');
+}
+
 const normalizedBase = (() => {
   const normalize = (val: string) => {
     const trimmed = val.replace(/\/+$/, '');
     return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
   };
 
-  if (rawBase && rawBase.trim()) {
-    return normalize(rawBase.trim());
-  }
-
-  // If not provided, default to prod endpoint.
-  return normalize('https://ph-shoes-alerts-service.onrender.com');
+  return normalize(alertsBaseURL);
 })();
 
 const client: AxiosInstance = axios.create({
