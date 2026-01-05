@@ -5,6 +5,18 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import path from 'node:path';
 
 export default defineConfig(({ mode }) => {
+  const requireEnv = (name) => {
+    const value = process.env[name];
+    if (!value) {
+      throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
+  };
+
+  const alertsProxyTarget = requireEnv('VITE_ALERTS_API_BASE_URL');
+  const catalogProxyTarget = requireEnv('VITE_CATALOG_API_BASE_URL');
+  const userAccountsProxyTarget = requireEnv('VITE_USER_ACCOUNTS_API_BASE_URL');
+
   return {
     plugins: [
       react(),
@@ -32,21 +44,21 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Alerts service
         '/api/v1/alerts': {
-          target: 'http://localhost:8084',
+          target: alertsProxyTarget,
           changeOrigin: true,
         },
         // Catalog service
-        '/api/v1/fact-product-shoes': {
-          target: process.env.VITE_CATALOG_API_BASE_URL || 'http://localhost:8083',
+        '/api/v1/catalog-shoes': {
+          target: catalogProxyTarget,
           changeOrigin: true,
         },
         // User accounts (auth + account)
         '/api/v1/user-accounts': {
-          target: process.env.VITE_USER_ACCOUNTS_API_BASE_URL || 'http://localhost:8082',
+          target: userAccountsProxyTarget,
           changeOrigin: true,
         },
         '/api/v1/auth': {
-          target: process.env.VITE_USER_ACCOUNTS_API_BASE_URL || 'http://localhost:8082',
+          target: userAccountsProxyTarget,
           changeOrigin: true,
         },
       },

@@ -51,7 +51,7 @@ export async function fetchShoesByFilter(
   params.page = page;
   params.size = size;
 
-  const response = await catalogClient.get<Page<ProductShoe>>('/api/v1/fact-product-shoes', { params });
+  const response = await catalogClient.get<Page<ProductShoe>>('/api/v1/catalog-shoes', { params });
   return response.data;
 }
 
@@ -61,7 +61,7 @@ interface RawLatestData {
 }
 
 export async function fetchLatestShoeData(): Promise<LatestData[]> {
-  const resp = await catalogClient.get<RawLatestData[]>('/api/v1/fact-product-shoes/latest');
+  const resp = await catalogClient.get<RawLatestData[]>('/api/v1/catalog-shoes/latest');
 
   return resp.data.map<LatestData>(({ brand, latestDwid }) => {
     const yyyy = latestDwid.slice(0, 4);
