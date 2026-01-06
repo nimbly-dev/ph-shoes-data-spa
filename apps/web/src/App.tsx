@@ -65,6 +65,7 @@ export default function App() {
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [sessionTimeoutOpen, setSessionTimeoutOpen] = useState(false);
 
   // verification: separate “notice after register” vs “result from redirect”
   const [verifyNoticeOpen, setVerifyNoticeOpen] = useState(false);
@@ -89,6 +90,10 @@ export default function App() {
   useEffect(() => {
     if (loginOpen && auth.user && !auth.loading) setLoginOpen(false);
   }, [loginOpen, auth.user, auth.loading]);
+
+  useEffect(() => {
+    if (auth.logoutReason === 'session-timeout') setSessionTimeoutOpen(true);
+  }, [auth.logoutReason]);
 
   // registration success → show “check your email” notice
   function handleRegistered(email: string) {
@@ -127,6 +132,16 @@ export default function App() {
     setVerifyStatus(undefined);
     setLoginOpen(true);
   }
+
+  const closeSessionTimeoutDialog = () => {
+    setSessionTimeoutOpen(false);
+    auth.acknowledgeSessionTimeout();
+  };
+
+  const handleSessionTimeoutLogin = () => {
+    closeSessionTimeoutDialog();
+    openLogin();
+  };
   const closeVerifyResultDialog = () => {
     setVerifyResultOpen(false);
     setVerifyStatus(undefined);
@@ -342,6 +357,11 @@ const handleAccountDeleted = async () => {
                   status: verifyStatus,
                   onClose: closeVerifyResultDialog,
                   onLogin: openLogin,
+                }}
+                sessionTimeout={{
+                  open: sessionTimeoutOpen,
+                  onClose: closeSessionTimeoutDialog,
+                  onLogin: handleSessionTimeoutLogin,
                 }}
               />
             </Suspense>

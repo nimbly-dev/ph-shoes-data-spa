@@ -4,6 +4,7 @@ import { LoginDialog } from './components/LoginDialog';
 import { RegisterDialog } from './components/RegisterDialog';
 import { VerifyEmailNotice } from './components/VerifyEmailNotice';
 import { VerifyResultDialog } from './components/VerifyResultDialog';
+import { SessionTimeoutDialog } from './components/SessionTimeoutDialog';
 
 type AuthGateWidgetProps = WidgetRuntimeProps & {
   login: {
@@ -35,6 +36,11 @@ type AuthGateWidgetProps = WidgetRuntimeProps & {
     onClose: () => void;
     onLogin?: (prefill?: string | null) => void;
   };
+  sessionTimeout: {
+    open: boolean;
+    onClose: () => void;
+    onLogin: () => void;
+  };
 };
 
 const Widget: React.FC<AuthGateWidgetProps> = ({
@@ -42,6 +48,7 @@ const Widget: React.FC<AuthGateWidgetProps> = ({
   register,
   verifyNotice,
   verifyResult,
+  sessionTimeout,
 }) => {
   return (
     <>
@@ -73,6 +80,11 @@ const Widget: React.FC<AuthGateWidgetProps> = ({
         status={verifyResult.status}
         onClose={verifyResult.onClose}
         onLogin={verifyResult.onLogin}
+      />
+      <SessionTimeoutDialog
+        open={sessionTimeout.open}
+        onClose={sessionTimeout.onClose}
+        onLogin={sessionTimeout.onLogin}
       />
     </>
   );

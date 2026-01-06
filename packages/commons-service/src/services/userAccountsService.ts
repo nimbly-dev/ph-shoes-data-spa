@@ -43,6 +43,40 @@ const unauthenticatedClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
+type SessionTimeoutHandler = () => void;
+
+const sessionTimeoutHandlers = new Set<SessionTimeoutHandler>();
+let sessionTimeoutNotified = false;
+
+const AUTH_TIMEOUT_IGNORED_PATHS = ['/api/v1/auth/login', '/api/v1/auth/logout'];
+
+const isAuthTimeoutIgnored = (config?: InternalAxiosRequestConfig) => {
+  if (!config || typeof config.url !== 'string') return false;
+  return AUTH_TIMEOUT_IGNORED_PATHS.some((path) => config.url.includes(path));
+};
+
+const notifySessionTimeout = () => {
+  for (const handler of sessionTimeoutHandlers) handler();
+};
+
+export function onSessionTimeout(handler: SessionTimeoutHandler) {
+  sessionTimeoutHandlers.add(handler);
+  if (sessionTimeoutNotified) {
+    setTimeout(() => handler(), 0);
+  }
+  return () => sessionTimeoutHandlers.delete(handler);
+}
+
+export function triggerSessionTimeout() {
+  if (sessionTimeoutNotified) return;
+  sessionTimeoutNotified = true;
+  notifySessionTimeout();
+}
+
+export function resetSessionTimeoutNotification() {
+  sessionTimeoutNotified = false;
+}
+
 unauthenticatedClient.interceptors.request.use((config) => {
   if (typeof config.url === 'string') {
     config.url = stripDuplicateApiPrefix(config.url);
@@ -63,6 +97,22 @@ authClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+authClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status as number | undefined;
+    const hasToken = Boolean(getToken());
+    if (
+      (status === 401 || status === 403) &&
+      hasToken &&
+      !isAuthTimeoutIgnored(error?.config)
+    ) {
+      triggerSessionTimeout();
+    }
+    return Promise.reject(error);
+  }
+);
 
 export function saveToken(token: string) {
   localStorage.setItem(STORAGE_KEY, token);
@@ -103,6 +153,17 @@ export function decodeJwtEmail(token: string): string | null {
     const [, payload] = token.split('.');
     const json = JSON.parse(base64UrlDecode(payload));
     return typeof json?.email === 'string' ? json.email : null;
+  } catch {
+    return null;
+  }
+}
+
+export function decodeJwtExpiryMs(token: string): number | null {
+  try {
+    const [, payload] = token.split('.');
+    const json = JSON.parse(base64UrlDecode(payload));
+    if (typeof json?.exp !== 'number') return null;
+    return json.exp * 1000;
   } catch {
     return null;
   }
