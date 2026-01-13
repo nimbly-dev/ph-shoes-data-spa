@@ -60,7 +60,7 @@ export async function fetchShoesAI(
 
   try {
     const response = await textSearchClient.get<TextSearchResponse>(
-      '/api/v1/search/fact-product-shoes',
+      '/search/fact-product-shoes',
       { params: { q: nlQuery, page, size } },
     );
     return response.data;
