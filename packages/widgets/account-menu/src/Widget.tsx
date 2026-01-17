@@ -1,15 +1,22 @@
 import * as React from 'react';
 import { Menu, Box, Typography, Divider, Button, Stack } from '@mui/material';
+import { WidgetRuntimeProps } from '@widget-runtime';
 
-type Props = {
+export type AccountMenuWidgetProps = WidgetRuntimeProps & {
   anchorEl: HTMLElement | null;
   onClose: () => void;
   email: string;
   onLogout: () => void;
-  onOpenSettings?: () => void; // NEW
+  onOpenSettings?: () => void;
 };
 
-export const AccountMenu: React.FC<Props> = ({ anchorEl, onClose, email, onLogout, onOpenSettings }) => {
+export default function AccountMenuWidget({
+  anchorEl,
+  onClose,
+  email,
+  onLogout,
+  onOpenSettings,
+}: AccountMenuWidgetProps) {
   const open = Boolean(anchorEl);
   const clickSettings = () => {
     onClose();
@@ -24,7 +31,7 @@ export const AccountMenu: React.FC<Props> = ({ anchorEl, onClose, email, onLogou
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       disableScrollLock
-      slotProps={{ paper: { sx: { p: 2, width: 260 } } }} 
+      slotProps={{ paper: { sx: { p: 2, width: 260 } } }}
     >
       <Box>
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -54,4 +61,4 @@ export const AccountMenu: React.FC<Props> = ({ anchorEl, onClose, email, onLogou
       </Box>
     </Menu>
   );
-};
+}

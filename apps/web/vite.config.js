@@ -38,6 +38,8 @@ export default defineConfig(({ mode }) => {
         '@widgets/auth-gate': path.resolve(__dirname, '../..', 'packages/widgets/auth-gate/src'),
         '@widgets/account-settings': path.resolve(__dirname, '../..', 'packages/widgets/account-settings/src'),
         '@widgets/catalog-search': path.resolve(__dirname, '../..', 'packages/widgets/catalog-search/src'),
+        '@widgets/top-nav': path.resolve(__dirname, '../..', 'packages/widgets/top-nav/src'),
+        '@widgets/account-menu': path.resolve(__dirname, '../..', 'packages/widgets/account-menu/src'),
       },
     },
     server: {

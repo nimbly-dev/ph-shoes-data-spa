@@ -19,8 +19,9 @@ import {
 } from '@mui/icons-material';
 import { AISearch } from '@widgets/catalog-search';
 import { ServiceStatusEntry } from '@commons/types/ServiceStatus';
+import { WidgetRuntimeProps } from '@widget-runtime';
 
-type Props = {
+export type TopNavWidgetProps = WidgetRuntimeProps & {
   mode: 'light' | 'dark';
   onToggleMode: () => void;
 
@@ -40,20 +41,18 @@ type Props = {
   refreshingStatuses?: boolean;
 };
 
-export default function TopNav({
+export default function TopNavWidget({
   mode,
   onToggleMode,
-
   activeQuery,
   onSearch,
   onClear,
-
   onOpenNotifications,
   onOpenAccount,
   onOpenStatus,
   unread = 0,
   serviceStatuses = [],
-}: Props) {
+}: TopNavWidgetProps) {
   const theme = useTheme();
   const isDownMd = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -86,10 +85,9 @@ export default function TopNav({
             gap: 1,
             minHeight: 64,
             flexWrap: 'wrap',
-            alignItems: 'center',          // ← vertically center all children
+            alignItems: 'center',
           }}
         >
-          {/* Brand (left) */}
           <Typography
             variant="h6"
             sx={{ fontWeight: 800, mr: 2, whiteSpace: 'nowrap' }}
@@ -97,14 +95,13 @@ export default function TopNav({
             PH-Shoes
           </Typography>
 
-          {/* Compact AI search (center) */}
           {!isDownMd && (
             <Box
               sx={{
                 flex: 1,
                 maxWidth: 820,
                 display: 'flex',
-                alignItems: 'center',      // ← ensure search sits on same baseline
+                alignItems: 'center',
               }}
             >
               <AISearch
@@ -115,9 +112,7 @@ export default function TopNav({
             </Box>
           )}
 
-          {/* Actions (right) */}
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
-
             <IconButton size="small" onClick={onToggleMode} aria-label="Toggle theme">
               {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
             </IconButton>
@@ -127,7 +122,15 @@ export default function TopNav({
                 size="small"
                 onClick={onOpenStatus}
                 aria-label="Service status"
-                color={statusState === 'success' ? 'success' : statusState === 'warning' ? 'warning' : statusState === 'error' ? 'error' : 'default'}
+                color={
+                  statusState === 'success'
+                    ? 'success'
+                    : statusState === 'warning'
+                        ? 'warning'
+                        : statusState === 'error'
+                            ? 'error'
+                            : 'default'
+                }
               >
                 <Lan fontSize="small" />
               </IconButton>
