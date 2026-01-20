@@ -7,30 +7,9 @@ import {
   Typography,
 } from '@mui/material';
 import { FilterList } from '@mui/icons-material';
-import { UIProductFilters } from '@commons/types/UIProductFilters';
-import { ProductShoe } from '@commons/types/ProductShoe';
-import { WidgetRuntimeProps } from '@widget-runtime';
 import { FilterSidebars } from './components/Filters/FilterSidebars';
 import { ProductShoeList } from './components/ProductShoeList/ProductShoeList';
-
-export type CatalogSearchWidgetProps = WidgetRuntimeProps & {
-  isMobile: boolean;
-  drawerOpen: boolean;
-  aiQuery: string;
-  showingAI: boolean;
-  draftFilters: UIProductFilters;
-  activeFilters: UIProductFilters;
-  page: number;
-  pageSize: number;
-  alertedProductIds: Set<string>;
-  onOpenAlert: (shoe: ProductShoe) => void;
-  onDraftChange: (next: UIProductFilters) => void;
-  onApplyFilters: () => void;
-  onResetFilters: () => void;
-  onOpenDrawer: () => void;
-  onCloseDrawer: () => void;
-  onPageChange: (page: number) => void;
-};
+import { CatalogSearchWidgetProps } from './types/CatalogSearchWidgetProps';
 
 export const CatalogSearchWidget: React.FC<CatalogSearchWidgetProps> = ({
   isMobile,

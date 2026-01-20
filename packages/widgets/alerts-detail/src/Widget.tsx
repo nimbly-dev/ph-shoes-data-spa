@@ -22,16 +22,7 @@ import {
   AlertUpdateRequest,
   AlertTarget,
 } from '@commons/types/alerts';
-import { WidgetRuntimeProps } from '@widget-runtime';
-
-type Props = WidgetRuntimeProps & {
-  open: boolean;
-  onClose: () => void;
-  product: AlertTarget | null;
-  existingAlert?: AlertResponse | null;
-  onSave: (req: AlertCreateRequest | AlertUpdateRequest, productId: string) => Promise<void>;
-  onDelete: (productId: string) => Promise<void>;
-};
+import { AlertsDetailWidgetProps } from './types/AlertsDetailWidgetProps';
 
 type FormState = {
   desiredPrice?: number;
@@ -57,7 +48,7 @@ const defaultForm: FormState = {
   productUrl: undefined,
 };
 
-const Widget: React.FC<Props> = ({ open, onClose, product, existingAlert, onSave, onDelete }) => {
+const Widget: React.FC<AlertsDetailWidgetProps> = ({ open, onClose, product, existingAlert, onSave, onDelete }) => {
   const [form, setForm] = useState<FormState>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
 

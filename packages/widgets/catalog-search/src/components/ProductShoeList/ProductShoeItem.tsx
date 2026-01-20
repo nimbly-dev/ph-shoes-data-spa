@@ -20,11 +20,12 @@ interface Props {
   shoe: ProductShoe;
   onAlert?: (shoe: ProductShoe) => void;
   isAlerted?: boolean;
+  isLcp?: boolean;
 }
 
 const PLACEHOLDER = '/NoImagePlaceholder.png';
 
-export const ProductShoeItem: React.FC<Props> = ({ shoe, onAlert, isAlerted }) => {
+export const ProductShoeItem: React.FC<Props> = ({ shoe, onAlert, isAlerted, isLcp }) => {
   const src = shoe.image || PLACEHOLDER;
   const productUrl = shoe.url || '#';
   const hasCollectedDate =
@@ -103,6 +104,8 @@ export const ProductShoeItem: React.FC<Props> = ({ shoe, onAlert, isAlerted }) =
             src={src}
             alt={shoe.title}
             sx={{ height: 240, objectFit: 'contain' }}  // (tweak to 260 if you want bigger imagery)
+            loading={isLcp ? 'eager' : 'lazy'}
+            fetchPriority={isLcp ? 'high' : 'auto'}
             onError={(e) => {
               const img = e.currentTarget;
               if (img.src !== PLACEHOLDER) img.src = PLACEHOLDER;

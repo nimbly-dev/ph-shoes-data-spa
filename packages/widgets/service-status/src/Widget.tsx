@@ -14,17 +14,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
-import { ServiceStatusEntry } from '@commons/types/ServiceStatus';
-import { WidgetRuntimeProps } from '@widget-runtime';
-
-type Props = WidgetRuntimeProps & {
-  open: boolean;
-  onClose: () => void;
-  entries: ServiceStatusEntry[];
-  refreshing?: boolean;
-  onRefresh: () => void;
-  cooldownMsLeft?: number;
-};
+import { ServiceStatusWidgetProps } from './types/ServiceStatusWidgetProps';
 
 const iconForState = (state?: string) => {
   switch (state) {
@@ -37,7 +27,7 @@ const iconForState = (state?: string) => {
   }
 };
 
-const Widget: React.FC<Props> = ({
+const Widget: React.FC<ServiceStatusWidgetProps> = ({
   open,
   onClose,
   entries,

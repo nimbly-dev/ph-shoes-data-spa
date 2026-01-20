@@ -12,8 +12,7 @@ const loadWidget = <T extends React.ComponentType<any>>(
     }),
   );
 
-const AlertsCenterWidget = loadWidget('alerts-center', () => import('@widgets/alerts-center'));
-const AlertEditorWidget = loadWidget('alert-editor', () => import('@widgets/alert-editor'));
+const AlertsListWidget = loadWidget('alerts-list', () => import('@widgets/alerts-list'));
 const ServiceStatusWidget = loadWidget('service-status', () => import('@widgets/service-status'));
 const AuthGateWidget = loadWidget('auth-gate', () => import('@widgets/auth-gate'));
 const AccountSettingsWidget = loadWidget('account-settings', () => import('@widgets/account-settings'));
@@ -22,8 +21,7 @@ const TopNavWidget = loadWidget('top-nav', () => import('@widgets/top-nav'));
 const AccountMenuWidget = loadWidget('account-menu', () => import('@widgets/account-menu'));
 
 export type WidgetId =
-  | 'alerts-center'
-  | 'alert-editor'
+  | 'alerts-list'
   | 'service-status'
   | 'auth-gate'
   | 'account-settings'
@@ -33,8 +31,7 @@ export type WidgetId =
 
 export type WidgetComponent<Props = any> = React.ComponentType<Props>;
 
-export type AlertsCenterWidgetProps = React.ComponentProps<typeof AlertsCenterWidget>;
-export type AlertEditorWidgetProps = React.ComponentProps<typeof AlertEditorWidget>;
+export type AlertsListWidgetProps = React.ComponentProps<typeof AlertsListWidget>;
 export type ServiceStatusWidgetProps = React.ComponentProps<typeof ServiceStatusWidget>;
 export type AuthGateWidgetProps = React.ComponentProps<typeof AuthGateWidget>;
 export type AccountSettingsWidgetProps = React.ComponentProps<typeof AccountSettingsWidget>;
@@ -43,8 +40,7 @@ export type TopNavWidgetProps = React.ComponentProps<typeof TopNavWidget>;
 export type AccountMenuWidgetProps = React.ComponentProps<typeof AccountMenuWidget>;
 
 export const widgetRegistry = {
-  'alerts-center': AlertsCenterWidget,
-  'alert-editor': AlertEditorWidget,
+  'alerts-list': AlertsListWidget,
   'service-status': ServiceStatusWidget,
   'auth-gate': AuthGateWidget,
   'account-settings': AccountSettingsWidget,

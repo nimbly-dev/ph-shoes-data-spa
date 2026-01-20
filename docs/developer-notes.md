@@ -6,6 +6,16 @@
 - `widgetRegistry.tsx` relies on those `index.ts` files for lazy loading.
 - Named exports (e.g., `AISearch`) are re-exported from each widget’s `src/index.ts`.
 
+## `@` import aliases
+- `@widgets/*`, `@commons/*`, and `@widget-runtime` map to the workspace packages.
+- They are configured in `apps/web/tsconfig.json` and `apps/web/vite.config.js`.
+- Vite uses `apps/web/vite.config.js` at runtime; TypeScript uses `apps/web/tsconfig.json`.
+- Use these aliases to avoid brittle relative paths across packages.
+
+## TypeScript intersection types (`&`)
+- `TypeA & TypeB` means the type must satisfy both contracts.
+- Example: `WidgetRuntimeProps & { open: boolean }` combines runtime props with widget-specific props.
+
 ## Callback handlers in JSX
 - `onClick={doThing}` passes a function reference.
 - `onClick={() => doThing(arg)}` defers execution until the event, and captures `arg`.

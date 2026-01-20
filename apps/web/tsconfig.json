@@ -19,10 +19,10 @@
       "@commons/types/*": ["../../packages/commons-service/src/types/*"],
       "@widget-runtime": ["../../packages/widget-runtime/src/index.ts"],
       "@widget-runtime/*": ["../../packages/widget-runtime/src/*"],
-      "@widgets/alerts-center": ["../../packages/widgets/alerts-center/src/index.ts"],
-      "@widgets/alerts-center/*": ["../../packages/widgets/alerts-center/src/*"],
-      "@widgets/alert-editor": ["../../packages/widgets/alert-editor/src/index.ts"],
-      "@widgets/alert-editor/*": ["../../packages/widgets/alert-editor/src/*"]
+      "@widgets/alerts-list": ["../../packages/widgets/alerts-list/src/index.ts"],
+      "@widgets/alerts-list/*": ["../../packages/widgets/alerts-list/src/*"],
+      "@widgets/alerts-detail": ["../../packages/widgets/alerts-detail/src/index.ts"],
+      "@widgets/alerts-detail/*": ["../../packages/widgets/alerts-detail/src/*"]
     }
   },
   "include": ["src", "env.d.ts", "src/react-date-range.d.ts"],

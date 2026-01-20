@@ -1,55 +1,64 @@
-import React from 'react';
-import { WidgetRuntimeProps } from '@widget-runtime';
+import React, { useCallback, useState } from 'react';
+import { useAccountRedirects } from '@commons/hooks/useAccountRedirects';
+import { UnsubscribeDialogState } from '@commons/types/DialogStates';
 import { LoginDialog } from './components/LoginDialog';
 import { RegisterDialog } from './components/RegisterDialog';
 import { VerifyEmailNotice } from './components/VerifyEmailNotice';
 import { VerifyResultDialog } from './components/VerifyResultDialog';
 import { SessionTimeoutDialog } from './components/SessionTimeoutDialog';
-
-type AuthGateWidgetProps = WidgetRuntimeProps & {
-  login: {
-    open: boolean;
-    loading?: boolean;
-    error?: string | null;
-    prefillEmail?: string;
-    onClose: () => void;
-    onLogin: (email: string, password: string) => void | Promise<void>;
-    onOpenRegister?: () => void;
-  };
-  register: {
-    open: boolean;
-    onClose: () => void;
-    onRegistered: (email: string) => void;
-    onOpenLogin?: () => void;
-  };
-  verifyNotice: {
-    open: boolean;
-    email: string;
-    onClose: () => void;
-  };
-  verifyResult: {
-    open: boolean;
-    email?: string;
-    title?: string;
-    message?: string;
-    status?: 'loading' | 'success' | 'error';
-    onClose: () => void;
-    onLogin?: (prefill?: string | null) => void;
-  };
-  sessionTimeout: {
-    open: boolean;
-    onClose: () => void;
-    onLogin: () => void;
-  };
-};
+import { AuthGateWidgetProps } from './types/AuthGateWidgetProps';
 
 const Widget: React.FC<AuthGateWidgetProps> = ({
   login,
   register,
-  verifyNotice,
-  verifyResult,
   sessionTimeout,
+  onRequestLogin,
+  onUnsubscribeResult,
 }) => {
+  const [verifyNoticeOpen, setVerifyNoticeOpen] = useState(false);
+  const [verifyResultOpen, setVerifyResultOpen] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyTitle, setVerifyTitle] = useState('Email verified');
+  const [verifyMsg, setVerifyMsg] = useState<string | undefined>(undefined);
+  const [verifyStatus, setVerifyStatus] = useState<'loading' | 'success' | 'error' | undefined>(undefined);
+
+  const handleVerifyRedirectResult = useCallback(
+    ({ title, message, email, status }: { title: string; message?: string; email?: string; status?: 'loading' | 'success' | 'error' }) => {
+      setVerifyTitle(title);
+      setVerifyMsg(message);
+      setVerifyEmail(email ?? '');
+      setVerifyStatus(status);
+      setVerifyResultOpen(true);
+    },
+    []
+  );
+
+  const handleUnsubscribeRedirectResult = useCallback((state: UnsubscribeDialogState) => {
+    onUnsubscribeResult?.(state);
+  }, [onUnsubscribeResult]);
+
+  useAccountRedirects({
+    onVerifyResult: handleVerifyRedirectResult,
+    onUnsubscribeResult: handleUnsubscribeRedirectResult,
+  });
+
+  const handleRegistered = (email: string) => {
+    register.onClose();
+    setVerifyEmail(email);
+    setVerifyNoticeOpen(true);
+  };
+
+  const closeVerifyNotice = () => setVerifyNoticeOpen(false);
+  const closeVerifyResult = () => {
+    setVerifyResultOpen(false);
+    setVerifyStatus(undefined);
+  };
+
+  const handleVerifyLogin = (prefill?: string | null) => {
+    setVerifyResultOpen(false);
+    onRequestLogin?.(prefill);
+  };
+
   return (
     <>
       <LoginDialog
@@ -64,22 +73,22 @@ const Widget: React.FC<AuthGateWidgetProps> = ({
       <RegisterDialog
         open={register.open}
         onClose={register.onClose}
-        onRegistered={register.onRegistered}
+        onRegistered={handleRegistered}
         onOpenLogin={register.onOpenLogin}
       />
       <VerifyEmailNotice
-        open={verifyNotice.open}
-        email={verifyNotice.email}
-        onClose={verifyNotice.onClose}
+        open={verifyNoticeOpen}
+        email={verifyEmail}
+        onClose={closeVerifyNotice}
       />
       <VerifyResultDialog
-        open={verifyResult.open}
-        email={verifyResult.email}
-        title={verifyResult.title}
-        message={verifyResult.message}
-        status={verifyResult.status}
-        onClose={verifyResult.onClose}
-        onLogin={verifyResult.onLogin}
+        open={verifyResultOpen}
+        email={verifyEmail}
+        title={verifyTitle}
+        message={verifyMsg}
+        status={verifyStatus}
+        onClose={closeVerifyResult}
+        onLogin={handleVerifyLogin}
       />
       <SessionTimeoutDialog
         open={sessionTimeout.open}

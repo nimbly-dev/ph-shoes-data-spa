@@ -12,6 +12,7 @@ export default defineConfig({
       '@commons/utils': path.resolve(__dirname, '../../commons-service/src/utils'),
       '@commons/config': path.resolve(__dirname, '../../commons-service/src/config'),
       '@widget-runtime': path.resolve(__dirname, '../../widget-runtime/src'),
+      '@widgets/alerts-detail': path.resolve(__dirname, '../../widgets/alerts-detail/src'),
     },
   },
   build: {
@@ -20,7 +21,7 @@ export default defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
-      fileName: () => 'alerts-center.js',
+      fileName: () => 'alerts-list.js',
     },
   },
 });

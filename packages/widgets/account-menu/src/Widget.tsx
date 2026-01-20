@@ -1,14 +1,6 @@
 import * as React from 'react';
 import { Menu, Box, Typography, Divider, Button, Stack } from '@mui/material';
-import { WidgetRuntimeProps } from '@widget-runtime';
-
-export type AccountMenuWidgetProps = WidgetRuntimeProps & {
-  anchorEl: HTMLElement | null;
-  onClose: () => void;
-  email: string;
-  onLogout: () => void;
-  onOpenSettings?: () => void;
-};
+import { AccountMenuWidgetProps } from './types/AccountMenuWidgetProps';
 
 export default function AccountMenuWidget({
   anchorEl,

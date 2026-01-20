@@ -107,6 +107,7 @@ export const ProductShoeList: React.FC<Props> = ({
             <ProductShoeItem
               key={stableKey}
               shoe={shoe}
+              isLcp={idx === 0}
               onAlert={onOpenAlert}
               isAlerted={alertedProductIds?.has(shoe.id)}
             />

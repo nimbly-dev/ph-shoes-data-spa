@@ -1,19 +1,9 @@
 import React from 'react';
-import { WidgetRuntimeProps } from '@widget-runtime';
-import { UnsubscribeDialogState } from '@commons/types/DialogStates';
 import { AccountSettingsDialog } from './components/AccountSettingsDialog';
 import { UnsubscribeResultDialog } from './components/UnsubscribeResultDialog';
+import { AccountSettingsWidgetProps } from './types/AccountSettingsWidgetProps';
 
-type Props = WidgetRuntimeProps & {
-  settingsOpen: boolean;
-  onCloseSettings: () => void;
-  onAccountDeleted?: () => Promise<void> | void;
-  email?: string;
-  unsubscribeResult: UnsubscribeDialogState | null;
-  onCloseUnsubscribeResult: () => void;
-};
-
-const Widget: React.FC<Props> = ({
+const Widget: React.FC<AccountSettingsWidgetProps> = ({
   settingsOpen,
   onCloseSettings,
   onAccountDeleted,

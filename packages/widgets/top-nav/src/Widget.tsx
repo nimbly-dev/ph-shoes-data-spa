@@ -18,28 +18,7 @@ import {
   Lan,
 } from '@mui/icons-material';
 import { AISearch } from '@widgets/catalog-search';
-import { ServiceStatusEntry } from '@commons/types/ServiceStatus';
-import { WidgetRuntimeProps } from '@widget-runtime';
-
-export type TopNavWidgetProps = WidgetRuntimeProps & {
-  mode: 'light' | 'dark';
-  onToggleMode: () => void;
-
-  // AI search hooks
-  activeQuery: string;
-  onSearch: (q: string) => void;
-  onClear: () => void;
-
-  // optional actions
-  onOpenNotifications?: (anchor?: HTMLElement) => void;
-  onOpenAccount?: (anchor: HTMLElement) => void;
-  onOpenStatus?: () => void;
-
-  unread?: number;
-  serviceStatuses?: ServiceStatusEntry[];
-  onRefreshStatuses?: () => void;
-  refreshingStatuses?: boolean;
-};
+import { TopNavWidgetProps } from './types/TopNavWidgetProps';
 
 export default function TopNavWidget({
   mode,

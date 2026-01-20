@@ -1,4 +1,4 @@
 import Widget from './Widget';
 
 export default Widget;
-export * from './Widget';
+export type { AccountSettingsWidgetProps } from './types/AccountSettingsWidgetProps';

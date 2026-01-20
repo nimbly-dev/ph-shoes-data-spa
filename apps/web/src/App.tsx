@@ -11,16 +11,14 @@ import { useAuth } from '@commons/hooks/useAuth';
 
 import { ColorModeContext } from '@ph-shoes/commons-ui';
 import { useProductSearchControls } from '@commons/hooks/useProductSearchControls';
-import { useAccountRedirects } from '@commons/hooks/useAccountRedirects';
 import { UnsubscribeDialogState } from '@commons/types/DialogStates';
 import { useServiceStatuses } from '@commons/hooks/useServiceStatuses';
-import { useAlerts } from '@commons/hooks/useAlerts';
-import { AlertResponse, AlertCreateRequest, AlertUpdateRequest, AlertTarget } from '@commons/types/alerts';
+import { AlertResponse, AlertTarget } from '@commons/types/alerts';
+import { buildCombinedSearchParams, readParamValue } from '@commons/utils/urlParams';
 import { widgetRegistry } from './shell/widgetRegistry';
 import { WidgetErrorBoundary } from './shell/WidgetErrorBoundary';
 
-const AlertsCenterWidget = widgetRegistry['alerts-center'];
-const AlertEditorWidget = widgetRegistry['alert-editor'];
+const AlertsListWidget = widgetRegistry['alerts-list'];
 const ServiceStatusWidget = widgetRegistry['service-status'];
 const AuthGateWidget = widgetRegistry['auth-gate'];
 const AccountSettingsWidget = widgetRegistry['account-settings'];
@@ -65,27 +63,45 @@ export default function App() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [sessionTimeoutOpen, setSessionTimeoutOpen] = useState(false);
 
-  // verification: separate “notice after register” vs “result from redirect”
-  const [verifyNoticeOpen, setVerifyNoticeOpen] = useState(false);
-  const [verifyResultOpen, setVerifyResultOpen] = useState(false);
-  const [verifyEmail, setVerifyEmail] = useState('');
-  const [verifyTitle, setVerifyTitle] = useState<string>('Email verified');
-  const [verifyMsg, setVerifyMsg] = useState<string | undefined>(undefined);
-  const [verifyStatus, setVerifyStatus] = useState<'loading' | 'success' | 'error' | undefined>(undefined);
   const [unsubscribeResult, setUnsubscribeResult] = useState<UnsubscribeDialogState | null>(null);
-
-  // optional: prefill email when opening login from verify result
   const [loginEmailPrefill, setLoginEmailPrefill] = useState<string>('');
+
+  const shouldMountAuthRedirects = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = buildCombinedSearchParams();
+    const token = readParamValue(params, 'token');
+    const notMe = readParamValue(params, 'not_me', 'notMe', 'not-me');
+    const verified = params.get('verified');
+    const resent = params.get('resent');
+    const error = params.get('error');
+    const explicitAction = readParamValue(params, 'action', 'action?', 'flow', 'flow?');
+    const subscribeFlag = readParamValue(params, 'subscribe', 'subscribe?');
+    const unsubscribeFlag = readParamValue(params, 'unsubscribe', 'unsubscribe?');
+    return Boolean(
+      token ||
+      notMe ||
+      verified ||
+      resent ||
+      error ||
+      explicitAction ||
+      subscribeFlag ||
+      unsubscribeFlag,
+    );
+  }, []);
 
   //Accounts Setting
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
   // ---------- alerts ----------
-  const [alertsDrawerOpen, setAlertsDrawerOpen] = useState(false);
-  const [alertModalOpen, setAlertModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<AlertTarget | null>(null);
-  const [selectedAlert, setSelectedAlert] = useState<AlertResponse | null>(null);
-  const [returnToAlertsAfterEdit, setReturnToAlertsAfterEdit] = useState(false);
+  const [alertsCenterOpen, setAlertsCenterOpen] = useState(false);
+  const [alertedProductIds, setAlertedProductIds] = useState<Set<string>>(new Set());
+  const [alertsSnapshot, setAlertsSnapshot] = useState<AlertResponse[]>([]);
+  const [triggeredCount, setTriggeredCount] = useState(0);
+  const [alertRequest, setAlertRequest] = useState<{
+    product: AlertTarget;
+    existingAlert?: AlertResponse | null;
+    returnToCenter?: boolean;
+  } | null>(null);
 
   // account icon click → either open account menu or login
   const handleAccountClick = (anchor: HTMLElement) => {
@@ -103,41 +119,12 @@ export default function App() {
     if (auth.logoutReason === 'session-timeout') setSessionTimeoutOpen(true);
   }, [auth.logoutReason]);
 
-  // registration success → show “check your email” notice
-  function handleRegistered(email: string) {
-    setRegisterOpen(false);
-    setVerifyEmail(email);
-    setVerifyNoticeOpen(true);
-  }
-
   // cross-navigation
   const goToRegister = () => { setLoginOpen(false); setRegisterOpen(true); };
   const goToLogin    = () => { setRegisterOpen(false); setLoginOpen(true); };
 
-  const handleVerifyRedirectResult = useCallback(
-    ({ title, message, email, status }: { title: string; message?: string; email?: string; status?: 'loading' | 'success' | 'error' }) => {
-      setVerifyTitle(title);
-      setVerifyMsg(message);
-      setVerifyEmail(email ?? '');
-      setVerifyStatus(status);
-      setVerifyResultOpen(true);
-    },
-    []
-  );
-
-  const handleUnsubscribeRedirectResult = useCallback((state: UnsubscribeDialogState) => {
-    setUnsubscribeResult(state);
-  }, []);
-
-  useAccountRedirects({
-    onVerifyResult: handleVerifyRedirectResult,
-    onUnsubscribeResult: handleUnsubscribeRedirectResult,
-  });
-
   function openLogin(prefill?: string | null) {
     setLoginEmailPrefill(prefill ?? '');
-    setVerifyResultOpen(false);
-    setVerifyStatus(undefined);
     setLoginOpen(true);
   }
 
@@ -150,10 +137,6 @@ export default function App() {
     closeSessionTimeoutDialog();
     openLogin();
   };
-  const closeVerifyResultDialog = () => {
-    setVerifyResultOpen(false);
-    setVerifyStatus(undefined);
-  };
 
   //Accounts Setting
   const handleAccountDeleted = async () => {
@@ -164,53 +147,14 @@ export default function App() {
     }
   };
 
-  // ---------- alerts ----------
-  const {
-    alerts,
-    loading: alertsLoading,
-    triggeredCount,
-    create: createAlert,
-    update: updateAlert,
-    remove: deleteAlert,
-    refresh: refreshAlerts,
-  } = useAlerts(!!auth.user);
-
-  const openAlertModal = (product: AlertTarget, existing?: AlertResponse | null, fromAlertsList = false) => {
-    setSelectedProduct(product);
-    setSelectedAlert(existing ?? null);
-    setReturnToAlertsAfterEdit(fromAlertsList);
-    setAlertModalOpen(true);
-  };
-
-  const handleSaveAlert = async (
-    req: AlertCreateRequest | AlertUpdateRequest,
-    productId: string
-  ) => {
-    if (selectedAlert) await updateAlert(productId, req);
-    else await createAlert(req);
-  };
-
-  const handleDeleteAlert = async (productId: string) => {
-    await deleteAlert(productId);
-  };
-
-  const handleResetAlert = async (productId: string) => {
-    await updateAlert(productId, { productId, resetStatus: true } as AlertUpdateRequest);
-  };
-
-  const alertedProductIds = useMemo(() => new Set(alerts.map((a) => a.productId)), [alerts]);
-
-  const closeAlertsModal = () => {
-    setAlertsDrawerOpen(false);
-  };
-
-  const handleCloseAlertModal = () => {
-    setAlertModalOpen(false);
-    if (returnToAlertsAfterEdit) {
-      setAlertsDrawerOpen(true);
-      setReturnToAlertsAfterEdit(false);
-    }
-  };
+  const handleAlertsChange = useCallback(
+    (alerts: AlertResponse[], count: number, ids: string[]) => {
+      setAlertsSnapshot(alerts);
+      setTriggeredCount(count);
+      setAlertedProductIds(new Set(ids));
+    },
+    [],
+  );
 
   return (
     <>
@@ -221,7 +165,7 @@ export default function App() {
         activeQuery={aiQuery}
         onSearch={handleAiSearch}
         onClear={handleAiClear}
-        onOpenNotifications={() => setAlertsDrawerOpen(true)}
+        onOpenNotifications={() => setAlertsCenterOpen(true)}
         onOpenAccount={handleAccountClick}
         onOpenStatus={() => setStatusDialogOpen(true)}
         unread={triggeredCount}
@@ -268,8 +212,8 @@ export default function App() {
                 alertedProductIds={alertedProductIds}
                 onOpenAlert={(shoe) =>
                   auth.user
-                    ? openAlertModal(
-                        {
+                    ? setAlertRequest({
+                        product: {
                           id: shoe.id,
                           title: shoe.title,
                           priceSale: shoe.priceSale,
@@ -279,8 +223,8 @@ export default function App() {
                           productImageUrl: (shoe as any).productImageUrl ?? shoe.image,
                           url: shoe.url,
                         },
-                        alerts.find((a) => a.productId === shoe.id) ?? null,
-                      )
+                        existingAlert: alertsSnapshot.find((a) => a.productId === shoe.id) ?? null,
+                      })
                     : openLogin()
                 }
                 onDraftChange={handleDraftChange}
@@ -305,7 +249,7 @@ export default function App() {
             />
           )}
 
-          {(loginOpen || registerOpen || verifyNoticeOpen || verifyResultOpen || sessionTimeoutOpen) && (
+          {(loginOpen || registerOpen || sessionTimeoutOpen || shouldMountAuthRedirects) && (
             <WidgetErrorBoundary widgetId="auth-gate">
               <Suspense fallback={null}>
                 <AuthGateWidget
@@ -322,28 +266,15 @@ export default function App() {
                   register={{
                     open: registerOpen,
                     onClose: () => setRegisterOpen(false),
-                    onRegistered: handleRegistered,
                     onOpenLogin: goToLogin,
-                  }}
-                  verifyNotice={{
-                    open: verifyNoticeOpen,
-                    email: verifyEmail,
-                    onClose: () => setVerifyNoticeOpen(false),
-                  }}
-                  verifyResult={{
-                    open: verifyResultOpen,
-                    email: verifyEmail,
-                    title: verifyTitle,
-                    message: verifyMsg,
-                    status: verifyStatus,
-                    onClose: closeVerifyResultDialog,
-                    onLogin: openLogin,
                   }}
                   sessionTimeout={{
                     open: sessionTimeoutOpen,
                     onClose: closeSessionTimeoutDialog,
                     onLogin: handleSessionTimeoutLogin,
                   }}
+                  onRequestLogin={openLogin}
+                  onUnsubscribeResult={setUnsubscribeResult}
                 />
               </Suspense>
             </WidgetErrorBoundary>
@@ -365,55 +296,20 @@ export default function App() {
             </WidgetErrorBoundary>
           )}
 
-          {alertsDrawerOpen && (
-            <WidgetErrorBoundary widgetId="alerts-center">
-              <Suspense fallback={null}>
-                <AlertsCenterWidget
-                  widgetId="alerts-center"
-                  open={alertsDrawerOpen}
-                  onClose={closeAlertsModal}
-                  alerts={alerts}
-                  loading={alertsLoading}
-                  onRefresh={refreshAlerts}
-                  onResetAlert={(a) => handleResetAlert(a.productId)}
-                  onDeleteAlert={(a) => handleDeleteAlert(a.productId)}
-                  onEditAlert={(a) => {
-                    closeAlertsModal();
-                    openAlertModal(
-                      {
-                        id: a.productId,
-                        title: a.productName,
-                        priceSale: a.productCurrentPrice ?? 0,
-                        priceOriginal: a.productOriginalPrice ?? a.productCurrentPrice ?? 0,
-                        brand: a.productBrand,
-                        image: a.productImage ?? a.productImageUrl,
-                        productImageUrl: a.productImageUrl ?? a.productImage,
-                        url: a.productUrl,
-                      },
-                      a,
-                      true,
-                    );
-                  }}
-                />
-              </Suspense>
-            </WidgetErrorBoundary>
-          )}
-
-          {alertModalOpen && (
-            <WidgetErrorBoundary widgetId="alert-editor">
-              <Suspense fallback={null}>
-                <AlertEditorWidget
-                  widgetId="alert-editor"
-                  open={alertModalOpen}
-                  onClose={handleCloseAlertModal}
-                  product={selectedProduct}
-                  existingAlert={selectedAlert}
-                  onSave={handleSaveAlert}
-                  onDelete={handleDeleteAlert}
-                />
-              </Suspense>
-            </WidgetErrorBoundary>
-          )}
+          <WidgetErrorBoundary widgetId="alerts-list">
+            <Suspense fallback={null}>
+              <AlertsListWidget
+                widgetId="alerts-list"
+                isAuthenticated={!!auth.user}
+                open={alertsCenterOpen}
+                onOpen={() => setAlertsCenterOpen(true)}
+                onClose={() => setAlertsCenterOpen(false)}
+                alertRequest={alertRequest}
+                onAlertRequestHandled={() => setAlertRequest(null)}
+                onAlertsChange={handleAlertsChange}
+              />
+            </Suspense>
+          </WidgetErrorBoundary>
 
         </Box>
       </Container>

@@ -89,6 +89,9 @@ Widgets receive a small, explicit contract from the shell:
 Widgets are otherwise prop-driven. Shared hooks handle data access and side effects,
 keeping widgets decoupled without a shell API bridge.
 
+Widget prop types are defined per widget in `packages/widgets/<widget>/src/types`
+to keep `Widget.tsx` focused on behavior.
+
 ## Shared services and state
 Shared hooks and API clients live in `commons-service` to avoid duplicating logic
 inside each widget.
@@ -131,8 +134,8 @@ Touchpoints:
 3. Shared alerts hook handles API calls and refresh.
 
 Touchpoints:
-- `ph-shoes-data-spa/packages/widgets/alerts-center`
-- `ph-shoes-data-spa/packages/widgets/alert-editor`
+- `ph-shoes-data-spa/packages/widgets/alerts-list`
+- `ph-shoes-data-spa/packages/widgets/alerts-detail`
 - `ph-shoes-data-spa/packages/commons-service/src/hooks/useAlerts`
 
 ## Configuration and environment

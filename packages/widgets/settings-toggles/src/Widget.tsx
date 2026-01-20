@@ -10,16 +10,9 @@ import {
   Typography,
   Box,
 } from '@mui/material';
-import { WidgetRuntimeProps } from '@widget-runtime';
+import { SettingsTogglesWidgetProps } from './types/SettingsTogglesWidgetProps';
 
-type Props = WidgetRuntimeProps & {
-  open: boolean;
-  useVector: boolean;
-  onChange: (val: boolean) => void;
-  onClose: () => void;
-};
-
-const Widget: React.FC<Props> = ({ open, useVector, onChange, onClose }) => (
+const Widget: React.FC<SettingsTogglesWidgetProps> = ({ open, useVector, onChange, onClose }) => (
   <Dialog open={open} onClose={onClose}>
     <DialogTitle>Search Settings</DialogTitle>
     <DialogContent>
