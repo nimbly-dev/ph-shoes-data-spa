@@ -36,6 +36,8 @@ type FormState = {
   productUrl?: string;
 };
 
+const IMAGE_PLACEHOLDER = '/NoImagePlaceholder.png';
+
 const defaultForm: FormState = {
   desiredPrice: undefined,
   desiredPercent: undefined,
@@ -51,6 +53,11 @@ const defaultForm: FormState = {
 const Widget: React.FC<AlertsDetailWidgetProps> = ({ open, onClose, product, existingAlert, onSave, onDelete }) => {
   const [form, setForm] = useState<FormState>(defaultForm);
   const [submitting, setSubmitting] = useState(false);
+  const displayImage =
+    form.productImageUrl ??
+    form.productImage ??
+    product?.image ??
+    IMAGE_PLACEHOLDER;
 
   useEffect(() => {
     if (!product) return;
@@ -135,27 +142,54 @@ const Widget: React.FC<AlertsDetailWidgetProps> = ({ open, onClose, product, exi
       <DialogContent sx={{ pb: 1 }}>
         {product && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-              {product.title}
-            </Typography>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Chip
-                size="small"
-                label={`Current: ₱${product.priceSale.toLocaleString()}`}
-                color="primary"
-                variant="outlined"
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+            >
+              <Box
+                component="img"
+                src={displayImage}
+                alt={product.title}
+                sx={{
+                  width: 120,
+                  height: 120,
+                  objectFit: 'contain',
+                  borderRadius: 1.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.default',
+                  p: 1,
+                }}
+                onError={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (img.src !== IMAGE_PLACEHOLDER) img.src = IMAGE_PLACEHOLDER;
+                }}
               />
-              {product.priceOriginal > product.priceSale && (
-                <Chip
-                  size="small"
-                  label={`Orig: ₱${product.priceOriginal.toLocaleString()}`}
-                  color="default"
-                  variant="outlined"
-                />
-              )}
-              {existingAlert?.status === 'TRIGGERED' && (
-                <Chip size="small" color="warning" label="Triggered" />
-              )}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle1" fontWeight={700} gutterBottom noWrap>
+                  {product.title}
+                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                  <Chip
+                    size="small"
+                    label={`Current: ₱${product.priceSale.toLocaleString()}`}
+                    color="primary"
+                    variant="outlined"
+                  />
+                  {product.priceOriginal > product.priceSale && (
+                    <Chip
+                      size="small"
+                      label={`Orig: ₱${product.priceOriginal.toLocaleString()}`}
+                      color="default"
+                      variant="outlined"
+                    />
+                  )}
+                  {existingAlert?.status === 'TRIGGERED' && (
+                    <Chip size="small" color="warning" label="Triggered" />
+                  )}
+                </Stack>
+              </Box>
             </Stack>
           </Box>
         )}
