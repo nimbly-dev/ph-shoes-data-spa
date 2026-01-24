@@ -65,22 +65,22 @@ export function FilterSidebars({ draft, onDraftChange, onApply, onReset }: Props
 
       <Stack spacing={1.25}>
         {/* Brand — closed by default unless active */}
-        <CollapsibleSection title="Brand" summary={brandSum} defaultOpen={hasBrand}>
+        <CollapsibleSection title="Brand" summary={brandSum} defaultOpen={hasBrand} collapsible={false}>
           <BrandSelect value={draft.brand} onChange={(brand) => patch({ brand })} />
         </CollapsibleSection>
 
         {/* Gender — closed by default unless active */}
-        <CollapsibleSection title="Gender" summary={genderSum} defaultOpen={hasGender}>
+        <CollapsibleSection title="Gender" summary={genderSum} defaultOpen={hasGender} collapsible={false}>
           <GenderSelect value={draft.gender} onChange={(gender) => patch({ gender })} />
         </CollapsibleSection>
 
         {/* Size — open on desktop by default; otherwise only if active */}
-        <CollapsibleSection title="Size (US)" summary={sizesSum} defaultOpen={openSizeDefault}>
+        <CollapsibleSection title="Size (US)" summary={sizesSum} defaultOpen={openSizeDefault} collapsible={false}>
           <SizeChips columns={6} value={draft.sizes} onChange={(sizes) => patch({ sizes })} />
         </CollapsibleSection>
 
         {/* Price — open on desktop by default; otherwise only if active */}
-        <CollapsibleSection title="Price" summary={priceSum} defaultOpen={openPriceDefault}>
+        <CollapsibleSection title="Price" summary={priceSum} defaultOpen={openPriceDefault} collapsible={false}>
           <PriceRange
             value={{ min: draft.minPrice, max: draft.maxPrice }}
             onChange={({ min, max }) => patch({ minPrice: min, maxPrice: max })}
@@ -88,7 +88,7 @@ export function FilterSidebars({ draft, onDraftChange, onApply, onReset }: Props
         </CollapsibleSection>
 
         {/* Collected Date — closed by default unless active */}
-        <CollapsibleSection title="Collected Date" summary={dateSum} defaultOpen={hasDate}>
+        <CollapsibleSection title="Collected Date" summary={dateSum} defaultOpen={hasDate} collapsible={false}>
           <DateRangeField
             startDate={draft.startDate}
             endDate={draft.endDate}
@@ -97,12 +97,12 @@ export function FilterSidebars({ draft, onDraftChange, onApply, onReset }: Props
         </CollapsibleSection>
 
         {/* Keyword — closed by default unless active */}
-        <CollapsibleSection title="Keyword" summary={keywordSum} defaultOpen={hasKeyword}>
+        <CollapsibleSection title="Keyword" summary={keywordSum} defaultOpen={hasKeyword} collapsible={false}>
           <KeywordField value={draft.keyword} onChange={(keyword) => patch({ keyword })} />
         </CollapsibleSection>
 
         {/* Sale — closed by default unless active */}
-        <CollapsibleSection title="Sale" summary={saleSum} defaultOpen={hasSale}>
+        <CollapsibleSection title="Sale" summary={saleSum} defaultOpen={hasSale} collapsible={false}>
           <OnSaleToggle checked={!!draft.onSale} onChange={(onSale) => patch({ onSale })} />
         </CollapsibleSection>
       </Stack>

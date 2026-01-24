@@ -11,12 +11,12 @@ type Props = {
 export function BrandSelect({ value, onChange }: Props) {
   return (
     <FormControl size="small" fullWidth>
-      <InputLabel>Brand</InputLabel>
+      <InputLabel shrink>Brand</InputLabel>
       <Select
         label="Brand"
         value={value ?? ''}
         onChange={(e) => onChange((e.target.value as string) || undefined)}
-        renderValue={(v) => (v ? v : 'All Brands')}
+        displayEmpty
       >
         <MenuItem value=""><em>All Brands</em></MenuItem>
         {BRANDS.map((b) => (

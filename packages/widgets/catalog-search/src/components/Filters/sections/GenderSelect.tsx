@@ -11,12 +11,12 @@ type Props = {
 export function GenderSelect({ value, onChange }: Props) {
   return (
     <FormControl size="small" fullWidth>
-      <InputLabel>Gender</InputLabel>
+      <InputLabel shrink>Gender</InputLabel>
       <Select
         label="Gender"
         value={value ?? ''}
         onChange={(e) => onChange((e.target.value as string) || undefined)}
-        renderValue={(v) => (v ? v : 'All Genders')}
+        displayEmpty
       >
         <MenuItem value=""><em>All Genders</em></MenuItem>
         {GENDERS.map((g) => (

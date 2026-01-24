@@ -29,6 +29,7 @@ export interface TextSearchHit {
   gender?: string;
   ageGroup?: string;
   sizes?: string[] | null;
+  collectedDate?: string | null;
 }
 
 export interface TextSearchResults {
@@ -124,6 +125,11 @@ export function mapHitToProduct(hit: TextSearchHit, idx: number): ProductShoe {
   const effectivePriceOriginal = typeof hit.priceOriginal === 'number'
     ? hit.priceOriginal
     : effectivePriceSale;
+  const collectedDate = hit.collectedDate ?? undefined;
+  const collectedParts = collectedDate ? collectedDate.split('-') : [];
+  const collectedYear = collectedParts.length === 3 ? Number(collectedParts[0]) : undefined;
+  const collectedMonth = collectedParts.length === 3 ? Number(collectedParts[1]) : undefined;
+  const collectedDay = collectedParts.length === 3 ? Number(collectedParts[2]) : undefined;
 
   return {
     id: fallbackId,
@@ -138,5 +144,8 @@ export function mapHitToProduct(hit: TextSearchHit, idx: number): ProductShoe {
     gender: hit.gender ?? undefined,
     ageGroup: hit.ageGroup ?? undefined,
     sizes: hit.sizes ?? null,
+    year: Number.isFinite(collectedYear) ? collectedYear : undefined,
+    month: Number.isFinite(collectedMonth) ? collectedMonth : undefined,
+    day: Number.isFinite(collectedDay) ? collectedDay : undefined,
   };
 }

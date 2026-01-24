@@ -88,8 +88,8 @@ export const CatalogSearchWidget: React.FC<CatalogSearchWidgetProps> = ({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(320px, 360px) 1fr',
-            gap: 4,
+            gridTemplateColumns: 'minmax(360px, 420px) 1fr',
+            gap: 3,
             alignItems: 'start',
           }}
         >

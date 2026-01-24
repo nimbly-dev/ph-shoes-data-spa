@@ -23,7 +23,42 @@ const fmtLocal = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export function useProductSearchControls(isMobile: boolean): ProductSearchControls {
-  const pageSize = isMobile ? 8 : 15;
+  const [desktopPageSize, setDesktopPageSize] = useState(18);
+
+  const computeDesktopPageSize = useCallback(() => {
+    if (typeof window === 'undefined') return 18;
+    const filterColumnWidth = 420;
+    const horizontalGutters = 32;
+    const minCardWidth = 220;
+    const gridGap = 20;
+    const gridElement = document.querySelector('section');
+    const gridAvailableWidth = gridElement
+      ? gridElement.getBoundingClientRect().width
+      : Math.max(0, window.innerWidth - filterColumnWidth - horizontalGutters);
+    const columns = Math.max(2, Math.floor((gridAvailableWidth + gridGap) / (minCardWidth + gridGap)));
+    const gridTop = document.querySelector('section')?.getBoundingClientRect().top ?? 0;
+    const paginationReserve = 140;
+    const cardHeightEstimate = 420;
+    const availableHeight = Math.max(0, window.innerHeight - gridTop - paginationReserve);
+    const rows = Math.max(2, Math.floor(availableHeight / (cardHeightEstimate + gridGap)));
+    return columns * rows;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updatePageSize = () => setDesktopPageSize(computeDesktopPageSize());
+    updatePageSize();
+    window.addEventListener('resize', updatePageSize);
+    let observer: ResizeObserver | null = null;
+    const gridElement = document.querySelector('section');
+    if (gridElement && typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(updatePageSize);
+      observer.observe(gridElement);
+    }
+    return () => window.removeEventListener('resize', updatePageSize);
+  }, [computeDesktopPageSize]);
+
+  const pageSize = isMobile ? 8 : desktopPageSize;
   const [page, setPage] = useState(0);
   useEffect(() => setPage(0), [pageSize]);
 

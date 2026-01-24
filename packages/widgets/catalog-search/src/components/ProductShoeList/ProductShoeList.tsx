@@ -97,12 +97,12 @@ export const ProductShoeList: React.FC<Props> = ({
           gridTemplateColumns: {
             xs: 'repeat(2, minmax(0, 1fr))',
             sm: 'repeat(3, minmax(0, 1fr))',
-            md: 'repeat(auto-fill, minmax(220px, 1fr))',
+            md: 'repeat(auto-fit, minmax(220px, 1fr))',
           },
         }}
       >
         {displayContent.map((shoe, idx) => {
-          const stableKey = shoe.dwid ?? shoe.id ?? `${shoe.title}-${idx}`;
+          const stableKey = `${shoe.dwid ?? shoe.id ?? shoe.title}-${idx}`;
           return (
             <ProductShoeItem
               key={stableKey}

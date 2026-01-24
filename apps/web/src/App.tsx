@@ -190,9 +190,9 @@ export default function App() {
       <Container disableGutters maxWidth={false} sx={{ width: '100%' }}>
         <Box
           sx={{
-            maxWidth: '1680px',
-            mx: 'auto',
-            px: { xs: 2, md: 3 },
+            maxWidth: '100%',
+            mx: 0,
+            px: { xs: 1.5, md: 2 },
             pt: 3,
             pb: 4,
           }}
