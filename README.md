@@ -27,8 +27,19 @@ Architecture visual:
 ### General Usage
 This walkthrough covers the full user journey from onboarding through alert handling.
 
-- [Public usage video](https://drive.google.com/file/d/1TD2_m9Pzc_1WvUzs19qvHAE87fmcgUeT/view?usp=sharing)
+- Watch video: [PH Shoes SPA Usage Walkthrough](https://drive.google.com/file/d/1TD2_m9Pzc_1WvUzs19qvHAE87fmcgUeT/view?usp=drive_link)
 - What this demonstrates: Core navigation, browsing, alert setup, and triggered notifications.
+
+Optional inline embed (works only in markdown viewers that allow iframes):
+
+```html
+<iframe
+  src="https://drive.google.com/file/d/1TD2_m9Pzc_1WvUzs19qvHAE87fmcgUeT/preview"
+  width="960"
+  height="540"
+  allow="autoplay">
+</iframe>
+```
 
 ### User Verification
 After signup, the user verifies their email before accessing personalized alert features and continuing to item browsing.
